@@ -251,6 +251,7 @@ cosmog_magisk_denylist() {
               adb -s $i reboot
               echo "[reboot] rebooting, sleeping for 180s..."
               sleep 180  # Wait for the device to reboot
+          fi
       else
           echo "[magisk] Skipping $i due to connection error."
           continue
