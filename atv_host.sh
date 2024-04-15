@@ -48,7 +48,14 @@ atvname="CMG"
 
 # reboots atv after free_space is ran, default false
 # comstud cs5 rom users should set this to true
+# reboot sleep is set to 180s (3mins)
 reboot_cleanup=false
+
+# reboots atv after denylist is added
+# denylist will not take effect unless android is rebooted
+# default to false due to different android devices
+# reboot sleep is set to 180s (3mins)
+reboot_denylist=false
 
 # Clone joltik repository if not already cloned
 if [ ! -d ./joltik ]; then
@@ -239,6 +246,11 @@ cosmog_magisk_denylist() {
           # adding packages to denylist
           adb -s $i shell "su -c '/system/bin/sh /data/local/tmp/atv_device.sh setup_magisk_denylist'"
           echo "[magisk] denylist complete"
+          if [[ "$reboot_denylist" == "true" ]]; then
+              echo "[reboot] Rebooting device $i..."
+              adb -s $i reboot
+              echo "[reboot] rebooting, sleeping for 180s..."
+              sleep 180  # Wait for the device to reboot
       else
           echo "[magisk] Skipping $i due to connection error."
           continue
@@ -384,7 +396,8 @@ free_space() {
           if [[ "$reboot_cleanup" == "true" ]]; then
               echo "[reboot] Rebooting device $i..."
               adb -s $i reboot
-              sleep 120  # Wait for the device to reboot
+              echo "[reboot] sleepign for 180s..."
+              sleep 180  # Wait for the device to reboot
           fi
       else
           echo "[storage] skipping device $i due to connection error."
