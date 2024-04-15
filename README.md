@@ -14,7 +14,7 @@
         - vm.txt
           - ip per line:
           - localhost:5555, localhost:5556, localhost:5557, etc
-        -redroid containers should already be running before you start
+          - redroid containers should already be running before you start
 
 3. **redroid_device.sh**
     - This script is required by redroid_host.sh
