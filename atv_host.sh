@@ -429,6 +429,8 @@ pogo_clean_install() {
     cosmog_start || { log "[error] starting cosmog"; exit 1; }
 }
 
+exec >>"$logfile" 2>&1
+
 # If no arguments are provided, run all functions
 if [ $# -eq 0 ]; then
     main() {
