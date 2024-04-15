@@ -5,17 +5,6 @@
 # Ensure the cosmog directory exists
 cd "$(dirname "$0")"
 
-logdir=./logs
-logfile=${logdir}/atv_host.log
-
-log() {
-    line="$(date + '[%Y-%m-%dT%H:%M:%S %Z]') $@"
-    echo "$line"
-}
-
-mkdir -p "$logdir"
-touch "$logfile"
-
 # xml file for older opengl 2.0 devices to avoid warning pop-up
 # download warning.xml from this repo
 xml_file="warning.xml"
