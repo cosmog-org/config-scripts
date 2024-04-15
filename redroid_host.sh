@@ -187,7 +187,7 @@ setup_permissions_script() {
       if adb_connect_device "$i"; then
           if adb_root_device "$i"; then
                 # granting scripts executable permission
-                adb -s $i shell "su -c chmod +x /data/local/tmp/setup.sh"
+                adb -s $i shell "su -c chmod +x /data/local/tmp/redroid_device.sh"
                 echo "[setup] script chmod +x successful"
             else
                 echo "[setup] Skipping $i due to connection error."
@@ -207,7 +207,7 @@ magisk_setup_init() {
           if adb_root_device "$i"; then
             # completing magisk setup
               echo "[magisk] attempting to finish magisk init"
-              timeout 10s adb -s $i shell "su -c '/system/bin/sh /data/local/tmp/setup.sh setup_magisk_app'"
+              timeout 10s adb -s $i shell "su -c '/system/bin/sh /data/local/tmp/redroid_device.sh setup_magisk_app'"
               echo "[magisk] magisk init setup complete"
               # sleep 5 seconds to prevent moving too fast after init
               sleep 5
@@ -229,7 +229,7 @@ magisk_setup_settings() {
               # enabling su via shell and disabling adb root to avoid problems
               echo "[magisk] shell su granting"
               for k in `seq 1 3` ; do
-            	  timeout 10s adb -s $i shell "su -c '/system/bin/sh /data/local/tmp/setup.sh setup_magisk_settings'"
+            	  timeout 10s adb -s $i shell "su -c '/system/bin/sh /data/local/tmp/redroid_device.sh setup_magisk_settings'"
             	  sleep 2
               done
               if adb_unroot_device "$i"; then
@@ -255,7 +255,7 @@ setup_do_settings() {
       if adb_connect_device "$i"; then
           # running global commands avoid pop-ups and issues
           echo "[setup] setting up global settings"
-          timeout 10s adb -s $i shell "su -c '/system/bin/sh /data/local/tmp/setup.sh do_settings'"
+          timeout 10s adb -s $i shell "su -c '/system/bin/sh /data/local/tmp/redroid_device.sh do_settings'"
           echo "[setup] global settings complete"
       else
           echo "[setup] Skipping $i due to connection error."
@@ -269,7 +269,7 @@ magisk_denylist() {
     for i in "${devices[@]}";do
       if adb_connect_device "$i"; then
           # adding common packages to denylist
-          timeout 10s adb -s $i shell "su -c '/system/bin/sh /data/local/tmp/setup.sh setup_magisk_denylist'"
+          timeout 10s adb -s $i shell "su -c '/system/bin/sh /data/local/tmp/redroid_device.sh setup_magisk_denylist'"
           echo "[magisk] denylist complete"
       else
           echo "[setup] Skipping $i due to connection error."
@@ -283,7 +283,7 @@ magisk_sulist() {
       if adb_connect_device "$i"; then
           # setting up magiskhide + sulist
           echo "[magisk] starting magisk hide and sulist services..."
-          timeout 10s adb -s $i shell "su -c '/system/bin/sh /data/local/tmp/setup.sh setup_magisksulist_app'"
+          timeout 10s adb -s $i shell "su -c '/system/bin/sh /data/local/tmp/redroid_device.sh setup_magisksulist_app'"
           sleep 40
           timeout 10s adb -s $i reboot
           echo "[magisk] hide and sulist enabled"
@@ -304,7 +304,7 @@ cosmog_install() {
           timeout 10s adb -s $i shell "su -c 'am force-stop $cosmog_package && killall $cosmog_package'"
           timeout 10s adb -s $i install -r $cosmog_apk
           echo "[cosmog] installed cosmog"
-          timeout 10s adb -s $i shell "su -c '/system/bin/sh /data/local/tmp/setup.sh setup_cosmog_policies'"
+          timeout 10s adb -s $i shell "su -c '/system/bin/sh /data/local/tmp/redroid_device.sh setup_cosmog_policies'"
           echo "[cosmog] policy added"
 
       else
@@ -318,7 +318,7 @@ cosmog_sulist() {
     for i in "${devices[@]}";do
       if adb_connect_device "$i"; then
           # add cosmog and magisk to sulist
-          timeout 10s adb -s $i shell "su -c '/system/bin/sh /data/local/tmp/setup.sh setup_magisk_sulist'"
+          timeout 10s adb -s $i shell "su -c '/system/bin/sh /data/local/tmp/redroid_device.sh setup_magisk_sulist'"
           echo "[magisk] sulist packages added"
       else
           echo "[setup] Skipping $i due to connection error."
