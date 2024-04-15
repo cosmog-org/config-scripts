@@ -1,12 +1,13 @@
 #!/bin/bash
 # make sure you have a devices.txt in the root dir of the script
 # this devices.txt should contain 1 ip address per line
+# or use the nmap_adb.sh script included in this repo
 
 # Ensure the cosmog directory exists
 cd "$(dirname "$0")"
 
 # xml file for older opengl 2.0 devices to avoid warning pop-up
-# download xml from #atv-scripts channel in cosmog server
+# download warning.xml from this repo
 xml_file="warning.xml"
 xml_name="com.nianticproject.holoholo.libholoholo.unity.UnityMainActivity.xml"
 xml_path="/data/data/com.nianticlabs.pokemongo/shared_prefs/"
@@ -68,8 +69,8 @@ if [ ! -f devices.txt ]; then
     exit 1
 fi
 
-if [ ! -f atv.cosmog.device.sh ]; then
-    echo "[error] atv.cosmog.device.sh file not found"
+if [ ! -f atv_device.sh ]; then
+    echo "[error] atv_device.sh file not found"
     exit 1
 fi
 
@@ -116,9 +117,9 @@ cosmog_atv_script() {
   for i in "${devices[@]}";do
     if connect_device "$i" "$port"; then
         # push atv setup to device
-        adb -s $i push atv.cosmog.device.sh /data/local/tmp/
+        adb -s $i push atv_device.sh /data/local/tmp/
         # granting scripts executable permission
-        adb -s $i shell "su -c chmod +x /data/local/tmp/atv.cosmog.device.sh"
+        adb -s $i shell "su -c chmod +x /data/local/tmp/atv_device.sh"
         echo "[setup] scripts transferred and ready"
     else
         echo "[setup] Skipping $i due to connection error."
@@ -189,7 +190,7 @@ cosmog_do_settings() {
           echo "[setup] setting up global settings"
           adb -s $i shell "su -c 'whoami'"
           adb -s $i shell "su -c 'which sh'"
-          adb -s $i shell "su -c '/system/bin/sh /data/local/tmp/atv.cosmog.device.sh do_settings'"
+          adb -s $i shell "su -c '/system/bin/sh /data/local/tmp/atv_device.sh do_settings'"
           echo "[setup] global settings complete"
       else
           echo "[setup] Skipping $i due to connection error."
@@ -206,8 +207,8 @@ cosmog_install() {
           # install cosmog
           echo "[cosmog] killing app if it exists"
           adb -s $i shell "su -c 'am force-stop $cosmog_package && killall $cosmog_package'"
-          adb -s $i uninstall $cosmog_package
-          echo "[cosmog] uninstall cosmog"
+          #adb -s $i uninstall $cosmog_package
+          #echo "[cosmog] uninstall cosmog"
           timeout 5m adb -s $i install -r $cosmog_apk
           echo "[cosmog] installed cosmog"
       else
@@ -222,7 +223,7 @@ cosmog_root_policy() {
     for i in "${devices[@]}";do
       if connect_device "$i" "$port"; then
           # setup cosmog root policy
-          adb -s $i shell "su -c sh /data/local/tmp/atv.cosmog.device.sh setup_cosmog_policies"
+          adb -s $i shell "su -c sh /data/local/tmp/atv_device.sh setup_cosmog_policies"
           echo "[cosmog] policy added"
       else
           echo "[cosmog] Skipping $i due to connection error."
@@ -236,7 +237,7 @@ cosmog_magisk_denylist() {
     for i in "${devices[@]}";do
       if connect_device "$i" "$port"; then
           # adding packages to denylist
-          adb -s $i shell "su -c '/system/bin/sh /data/local/tmp/atv.cosmog.device.sh setup_magisk_denylist'"
+          adb -s $i shell "su -c '/system/bin/sh /data/local/tmp/atv_device.sh setup_magisk_denylist'"
           echo "[magisk] denylist complete"
       else
           echo "[magisk] Skipping $i due to connection error."
@@ -257,7 +258,7 @@ cosmog_lib() {
           adb -s $i shell "su -c 'cp /data/local/tmp/$cosmog_lib /data/data/$cosmog_package/files/$cosmog_lib'"
           echo "[lib] changing lib perms and ownership"
           # setup cosmog root policy
-          adb -s $i shell "su -c '/system/bin/sh /data/local/tmp/atv.cosmog.device.sh setup_cosmog_perms'"
+          adb -s $i shell "su -c '/system/bin/sh /data/local/tmp/atv_device.sh setup_cosmog_perms'"
           adb -s $i shell "su -c 'chown root:root /data/data/$cosmog_package/files/$cosmog_lib'"
           adb -s $i shell "su -c 'chmod 444 /data/data/$cosmog_package/files/$cosmog_lib'"
       else
