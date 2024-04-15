@@ -1,6 +1,6 @@
 #!/bin/bash
 
-# make sure you throw host.setup.sh and setup.sh inside cosmog folder
+# make sure you throw host.redroid_device.sh and redroid_device.sh inside cosmog folder
 # this script assumes you already have your docker-compose.yml setup
 # alongside houndour and configs folder with cosmog configuration files ready
 # all of this should be auto created by init.sh if anything
@@ -27,10 +27,10 @@ if [ ! -f vm.txt ]; then
     exit 1
 fi
 
-# setup.sh needs to be in the same folder
+# redroid_device.sh needs to be in the same folder
 # this script is required to run inside redroid
-if [ ! -f setup.sh ]; then
-    echo "[error] setup.sh file not found"
+if [ ! -f redroid_device.sh ]; then
+    echo "[error] redroid_device.sh file not found"
     exit 1
 fi
 
@@ -173,7 +173,7 @@ adb_unroot_device() {
 setup_push_script() {
     for i in "${devices[@]}";do
       if adb_connect_device "$i"; then
-          adb -s $i push setup.sh /data/local/tmp/
+          adb -s $i push redroid_device.sh /data/local/tmp/
           echo "[setup] scripts transferred and ready"
       else
           echo "[setup] Skipping $i due to connection error."
@@ -411,7 +411,7 @@ cosmog_lib_update() {
 if [ $# -eq 0 ]; then
     main() {
         setup_push_script || { log "[error] transferring redroid setup script"; exit 1; }
-        setup_permissions_script || { log "[error] granting setup.sh chmod +x"; exit 1; }
+        setup_permissions_script || { log "[error] granting redroid_device.sh chmod +x"; exit 1; }
         magisk_setup_init || { log "[error] completing magisk init"; exit 1; }
         magisk_setup_settings || { log "[error] giving shell su perms"; exit 1; }
         setup_do_settings || { log "[error] enabling global settings"; exit 1; }
