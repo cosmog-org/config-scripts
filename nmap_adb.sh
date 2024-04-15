@@ -14,7 +14,7 @@ if [ $# -eq 0 ]; then
     exit 1
 fi
 
-# initializes or clears devices.txt and error.log
+# initializes or clears devices.txt
 : > $OUTPUT_FILE
 
 # scan the provided argument(s)
