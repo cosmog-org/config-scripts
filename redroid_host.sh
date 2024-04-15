@@ -384,7 +384,7 @@ magisk_repackage() {
   for i in "${devices[@]}";do
     if adb_connect_device "$i"; then
         echo "[magisk] attempting to repackage magisk..."
-        timeout 10s adb -s $i shell "su -c '/system/bin/sh /data/local/tmp/repackage.magisk.sh'"
+        timeout 10s adb -s $i shell "su -c '/system/bin/sh /data/local/tmp/redroid_device.sh repackage_magisk'"
         sleep 40
         timeout 10s echo "[magisk] reboot needed...sleep 20"
         adb -s $i shell "su -c 'reboot'"
