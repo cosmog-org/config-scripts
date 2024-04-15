@@ -3,7 +3,7 @@
 # sudo apt install nmap -y (should come preinstalled in most *nix distributions)
 
 # sets the output file name
-# leave it as devices.txt for atv.cosmog.script.sh to read
+# leave it as devices.txt for atv_host.sh to read
 OUTPUT_FILE="devices.txt"
 
 # verify subnet argument(s) is provided
