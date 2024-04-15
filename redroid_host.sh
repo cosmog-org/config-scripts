@@ -1,6 +1,6 @@
 #!/bin/bash
 
-# make sure you throw host.redroid_device.sh and redroid_device.sh inside cosmog folder
+# make sure you throw redroid_host.sh and redroid_device.sh inside cosmog folder
 # this script assumes you already have your docker-compose.yml setup
 # alongside houndour and configs folder with cosmog configuration files ready
 # all of this should be auto created by init.sh if anything
