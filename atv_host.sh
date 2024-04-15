@@ -207,8 +207,8 @@ cosmog_install() {
           # install cosmog
           echo "[cosmog] killing app if it exists"
           adb -s $i shell "su -c 'am force-stop $cosmog_package && killall $cosmog_package'"
-          adb -s $i uninstall $cosmog_package
-          echo "[cosmog] uninstall cosmog"
+          #adb -s $i uninstall $cosmog_package
+          #echo "[cosmog] uninstall cosmog"
           timeout 5m adb -s $i install -r $cosmog_apk
           echo "[cosmog] installed cosmog"
       else
