@@ -3,9 +3,8 @@
 # make sure you throw redroid_host.sh and redroid_device.sh inside cosmog folder
 # this script assumes you already have your docker-compose.yml setup
 # alongside houndour and configs folder with cosmog configuration files ready
-# all of this should be auto created by init.sh if anything
-# if init.sh is not found in the scripts channel of cosmog
-# wait for it become available, until then, be sure you know what you are doing with this script
+# all of this should be auto created by redroid_init.sh if anything
+# if redroid_init.sh is not found in the repo check back later
 
 # leave this as is unless directed to change
 cosmog_lib="libNianticLabsPlugin.so"
