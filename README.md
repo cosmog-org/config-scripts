@@ -10,7 +10,7 @@
 2. **redroid_host.sh**
     - This script should be run on your redroid host
     - Requirements:
-        - redroid_setup.sh
+        - redroid_device.sh
         - vm.txt
           - ip per line:
           - localhost:5555, localhost:5556, localhost:5557, etc
