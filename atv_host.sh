@@ -428,7 +428,7 @@ pogo_clean_install() {
     pogo_install || { log "[error] installing pogo"; exit 1; }
     opengl_warning || { log "[error] installing pogo"; exit 1; }
     cosmog_atv_script || { log "[error] transferring device setup script"; exit 1; }
-    cosmog_do_settings || { log "[error] generating and transferring cosmog config json"; exit 1; }
+    cosmog_do_settings || { log "[error] performing global config on device"; exit 1; }
     cosmog_install || { log "[error] installing cosmog"; exit 1; }
     cosmog_root_policy || { log "[error] inserting cosmog root policy"; exit 1; }
     cosmog_magisk_denylist || { log "[error] setting up denylist"; exit 1; }
@@ -443,7 +443,7 @@ if [ $# -eq 0 ]; then
     main() {
         cosmog_atv_script || { log "[error] transferring device setup script"; exit 1; }
         cosmog_config || { log "[error] generating and transferring cosmog config json"; exit 1; }
-        cosmog_do_settings || { log "[error] generating and transferring cosmog config json"; exit 1; }
+        cosmog_do_settings || { log "[error] performing global config on device"; exit 1; }
         cosmog_install || { log "[error] installing cosmog"; exit 1; }
         cosmog_root_policy || { log "[error] inserting cosmog root policy"; exit 1; }
         cosmog_magisk_denylist || { log "[error] setting up denylist"; exit 1; }
