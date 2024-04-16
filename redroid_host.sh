@@ -69,7 +69,7 @@ mapfile -t devices < vm.txt
 # handle adb connect and catch errors to avoid bad installs
 adb_connect_device() {
     local device_ip="$1"
-    local timeout_duration="10s"
+    local timeout_duration="15s"
     local max_retries=3
     local attempt=0
 
@@ -106,7 +106,7 @@ adb_connect_device() {
 # handle connecting via root to avoid bad installs
 adb_root_device() {
     local device_ip="$1"
-    local timeout_duration="10s"
+    local timeout_duration="15s"
     local max_retries=3
     local attempt=0
 
@@ -141,7 +141,7 @@ adb_root_device() {
 # handle unrooting to avoid adb_vendor_key unpairing hell
 adb_unroot_device() {
     local device_ip="$1"
-    local timeout_duration="10s"
+    local timeout_duration="15s"
     local max_retries=3
     local attempt=0
 
