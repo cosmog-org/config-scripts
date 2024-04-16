@@ -5,6 +5,9 @@
 # Ensure the cosmog directory exists
 cd "$(dirname "$0")"
 
+# Ensure unset variables will crash the script instead of causing silent corruption
+set -u
+
 # xml file for older opengl 2.0 devices to avoid warning pop-up
 # download warning.xml from this repo
 xml_file="warning.xml"
@@ -315,7 +318,8 @@ opengl_warning() {
             # Push XML file to the device
             adb -s $i push "$xml_file" /data/local/tmp
             adb -s $i shell "su -c 'chown root:root /data/local/tmp/$xml_file'"
-            adb -s $i shell "su -c 'cp /data/local/tmp/$xml_file $xml_path$xmlname'"
+            adb -s $i shell "su -c 'mkdir -p $xml_path'"
+            adb -s $i shell "su -c 'cp /data/local/tmp/$xml_file $xml_path$xml_name'"
         fi
     else
         echo "[xml] Skipping $i due to connection error."
