@@ -13,8 +13,6 @@ cosmog_apk=$(ls -t cosmog*.apk | head -n 1 | sed -e 's@\*@@g')
 # leave this as is unless cosmog dev mandates a different version
 lib_version=0.307.1
 
-t="30s"
-
 # Ensure the cosmog directory exists
 mkdir -p ~/cosmog
 cd ~/cosmog
