@@ -289,7 +289,7 @@ cosmog_start() {
       if connect_device "$i" "$port"; then
           # launch cosmog if start=true
           adb -s $i shell "su -c monkey -p com.sy1vi3.cosmog 1"
-          echo "[script]: ${deviceName} is complete and cosmog launched"
+          echo "[script]: $i is complete and cosmog launched"
       else
           echo "[cosmog] Skipping $i due to connection error."
           continue
