@@ -13,6 +13,8 @@ cosmog_apk=$(ls -t cosmog*.apk | head -n 1 | sed -e 's@\*@@g')
 # leave this as is unless cosmog dev mandates a different version
 lib_version=0.307.1
 
+t="30s"
+
 # Ensure the cosmog directory exists
 mkdir -p ~/cosmog
 cd ~/cosmog
@@ -38,7 +40,7 @@ logfile=${logdir}/cosmog.script.log
 cerror=${logdir}/connection_error.log
 
 log() {
-    line="$(date + '[%Y-%m-%dT%H:%M:%S %Z]') $@"
+    line="$(date +'[%Y-%m-%dT%H:%M:%S %Z]') $@"
     echo "$line"
 }
 
@@ -69,12 +71,13 @@ mapfile -t devices < vm.txt
 # handle adb connect and catch errors to avoid bad installs
 adb_connect_device() {
     local device_ip="$1"
-    local timeout_duration="15s"
+    local timeout_duration="30s"
     local max_retries=3
     local attempt=0
 
     # disconnect before connecting to avoid already connected status
     adb disconnect "${device_ip}"
+    sleep 2
     echo "[adb] trying to connect to ${device_ip}..."
     while (( attempt < max_retries )); do
         local output=$(timeout $timeout_duration adb connect "${device_ip}" 2>&1)
@@ -84,7 +87,7 @@ adb_connect_device() {
         elif [[ "$output" == *"offline"* ]]; then
             echo "[adb] device ${device_ip} is offline, retrying in 10 seconds..."
             ((attempt++))
-            sleep 10
+            sleep 30
         elif [[ "$output" == *"connection refused"* ]]; then
             echo "[adb] connection refused to ${device_ip}. Exiting script."
             exit 1  # exit script completely
@@ -106,7 +109,7 @@ adb_connect_device() {
 # handle connecting via root to avoid bad installs
 adb_root_device() {
     local device_ip="$1"
-    local timeout_duration="15s"
+    local timeout_duration="30s"
     local max_retries=3
     local attempt=0
 
@@ -119,7 +122,7 @@ adb_root_device() {
         elif [[ "$output" == *"error"* ]]; then
             echo "[adb] device ${device_ip} is offline, retrying in 10 seconds..."
             ((attempt++))
-            sleep 10
+            sleep 30
         elif [[ "$output" == *"production builds"* ]]; then
             echo "[adb] cannot run as root in production builds on ${device_ip}."
             echo "[adb] this error means your redroid image is not correct."
@@ -141,7 +144,7 @@ adb_root_device() {
 # handle unrooting to avoid adb_vendor_key unpairing hell
 adb_unroot_device() {
     local device_ip="$1"
-    local timeout_duration="15s"
+    local timeout_duration="30s"
     local max_retries=3
     local attempt=0
 
@@ -154,7 +157,7 @@ adb_unroot_device() {
         elif [[ "$output" == *"error"* ]]; then
             echo "[adb] device ${device_ip} is offline, retrying in 10 seconds..."
             ((attempt++))
-            sleep 10
+            sleep 30
         elif [[ $? -eq 124 ]]; then  # Check if timeout occurred
             echo "[adb] unroot attempt to ${device_ip} timed out."
             echo "${device_ip} Timeout" >> "$logfile"
@@ -174,6 +177,7 @@ setup_push_script() {
       if adb_connect_device "$i"; then
           adb -s $i push redroid_device.sh /data/local/tmp/
           echo "[setup] scripts transferred and ready"
+          sleep 2
       else
           echo "[setup] Skipping $i due to connection error."
           exit 1
@@ -184,10 +188,12 @@ setup_push_script() {
 setup_permissions_script() {
     for i in "${devices[@]}";do
       if adb_connect_device "$i"; then
+          sleep 2
           if adb_root_device "$i"; then
                 # granting scripts executable permission
                 adb -s $i shell "su -c chmod +x /data/local/tmp/redroid_device.sh"
                 echo "[setup] script chmod +x successful"
+                sleep 2
             else
                 echo "[setup] Skipping $i due to connection error."
                 exit 1
@@ -203,13 +209,14 @@ setup_permissions_script() {
 magisk_setup_init() {
     for i in "${devices[@]}";do
       if adb_connect_device "$i"; then
+          sleep 2
           if adb_root_device "$i"; then
             # completing magisk setup
               echo "[magisk] attempting to finish magisk init"
-              timeout 10s adb -s $i shell "su -c '/system/bin/sh /data/local/tmp/redroid_device.sh setup_magisk_app'"
+              adb -s $i shell "su -c '/system/bin/sh /data/local/tmp/redroid_device.sh setup_magisk_app'"
               echo "[magisk] magisk init setup complete"
               # sleep 5 seconds to prevent moving too fast after init
-              sleep 5
+              sleep 10
           else
               echo "[magisk] Skipping $i due to connection error."
               exit 1
@@ -224,12 +231,13 @@ magisk_setup_init() {
 magisk_setup_settings() {
     for i in "${devices[@]}";do
       if adb_connect_device "$i"; then
+          seep 2
           if adb_root_device "$i"; then
               # enabling su via shell and disabling adb root to avoid problems
               echo "[magisk] shell su granting"
               for k in `seq 1 3` ; do
-            	  timeout 10s adb -s $i shell "su -c '/system/bin/sh /data/local/tmp/redroid_device.sh setup_magisk_settings'"
-            	  sleep 2
+            	  adb -s $i shell "su -c '/system/bin/sh /data/local/tmp/redroid_device.sh setup_magisk_settings'"
+            	  sleep 5
               done
               if adb_unroot_device "$i"; then
                   echo "[magisk] shell su settings complete"
@@ -254,8 +262,9 @@ setup_do_settings() {
       if adb_connect_device "$i"; then
           # running global commands avoid pop-ups and issues
           echo "[setup] setting up global settings"
-          timeout 10s adb -s $i shell "su -c '/system/bin/sh /data/local/tmp/redroid_device.sh do_settings'"
+          adb -s $i shell "su -c '/system/bin/sh /data/local/tmp/redroid_device.sh do_settings'"
           echo "[setup] global settings complete"
+          sleep 2
       else
           echo "[setup] Skipping $i due to connection error."
           exit 1
@@ -268,8 +277,9 @@ magisk_denylist() {
     for i in "${devices[@]}";do
       if adb_connect_device "$i"; then
           # adding common packages to denylist
-          timeout 10s adb -s $i shell "su -c '/system/bin/sh /data/local/tmp/redroid_device.sh setup_magisk_denylist'"
+          adb -s $i shell "su -c '/system/bin/sh /data/local/tmp/redroid_device.sh setup_magisk_denylist'"
           echo "[magisk] denylist complete"
+          sleep 2
       else
           echo "[setup] Skipping $i due to connection error."
           exit 1
@@ -282,9 +292,9 @@ magisk_sulist() {
       if adb_connect_device "$i"; then
           # setting up magiskhide + sulist
           echo "[magisk] starting magisk hide and sulist services..."
-          timeout 10s adb -s $i shell "su -c '/system/bin/sh /data/local/tmp/redroid_device.sh setup_magisksulist_app'"
+          adb -s $i shell "su -c '/system/bin/sh /data/local/tmp/redroid_device.sh setup_magisksulist_app'"
           sleep 40
-          timeout 10s adb -s $i reboot
+          adb -s $i reboot
           echo "[magisk] hide and sulist enabled"
           echo "[magisk] reboot needed..sleep 20"
           sleep 20
@@ -300,12 +310,12 @@ cosmog_install() {
       if adb_connect_device "$i"; then
           # install cosmog
           echo "[cosmog] killing app if it exists"
-          timeout 10s adb -s $i shell "su -c 'am force-stop $cosmog_package && killall $cosmog_package'"
-          timeout 10s adb -s $i install -r $cosmog_apk
+          adb -s $i shell "su -c 'am force-stop $cosmog_package && killall $cosmog_package'"
+          adb -s $i install -r $cosmog_apk
           echo "[cosmog] installed cosmog"
-          timeout 10s adb -s $i shell "su -c '/system/bin/sh /data/local/tmp/redroid_device.sh setup_cosmog_policies'"
+          adb -s $i shell "su -c '/system/bin/sh /data/local/tmp/redroid_device.sh setup_cosmog_policies'"
           echo "[cosmog] policy added"
-
+          sleep 2
       else
           echo "[setup] Skipping $i due to connection error."
           exit 1
@@ -317,8 +327,9 @@ cosmog_sulist() {
     for i in "${devices[@]}";do
       if adb_connect_device "$i"; then
           # add cosmog and magisk to sulist
-          timeout 10s adb -s $i shell "su -c '/system/bin/sh /data/local/tmp/redroid_device.sh setup_magisk_sulist'"
+          adb -s $i shell "su -c '/system/bin/sh /data/local/tmp/redroid_device.sh setup_magisk_sulist'"
           echo "[magisk] sulist packages added"
+          sleep 2
       else
           echo "[setup] Skipping $i due to connection error."
           exit 1
@@ -330,7 +341,7 @@ reboot_redroid() {
     for i in "${devices[@]}";do
       if adb_connect_device "$i"; then
           # reboot redroid to avoid sulist adb problems
-          timeout 10s adb -s $i shell "su -c 'reboot'"
+          adb -s $i shell "su -c 'reboot'"
           echo "[setup] reboot needed...sleep 20"
           sleep 20
       else
@@ -345,13 +356,14 @@ cosmog_lib() {
       if adb_connect_device "$i"; then
           # send lib to device and set ownership and perm
           echo "[lib]: pushing lib and setting up dir..."
-          timeout 10s adb -s $i shell "su -c 'mkdir -p /data/data/$cosmog_package/files/'"
-          timeout 10s adb -s $i push joltik/arm64-v8a/$cosmog_lib /data/local/tmp/$cosmog_lib
-          timeout 10s adb -s $i shell "su -c 'cp /data/local/tmp/$cosmog_lib /data/data/$cosmog_package/files/$cosmog_lib'"
+          adb -s $i shell "su -c 'mkdir -p /data/data/$cosmog_package/files/'"
+          adb -s $i push joltik/arm64-v8a/$cosmog_lib /data/local/tmp/$cosmog_lib
+          adb -s $i shell "su -c 'cp /data/local/tmp/$cosmog_lib /data/data/$cosmog_package/files/$cosmog_lib'"
           echo "[lib] changing lib perms and ownership including path"
-          timeout 10s adb -s $i shell "su -c 'chown root:root /data/data/$cosmog_package/files/$cosmog_lib'"
-          timeout 10s adb -s $i shell "su -c 'chmod 444 /data/data/$cosmog_package/files/$cosmog_lib'"
+          adb -s $i shell "su -c 'chown root:root /data/data/$cosmog_package/files/$cosmog_lib'"
+          adb -s $i shell "su -c 'chmod 444 /data/data/$cosmog_package/files/$cosmog_lib'"
           echo "[lib] all done"
+          sleep 2
       else
           echo "[setup] Skipping $i due to connection error."
           exit 1
@@ -364,9 +376,9 @@ cosmog_start() {
     for i in "${devices[@]}";do
       if adb_connect_device "$i" "$port"; then
           # stop cosmog if it is running
-          timeout 10s adb -s $i shell "su -c 'am force-stop $cosmog_package && killall $cosmog_package'"
+          adb -s $i shell "su -c 'am force-stop $cosmog_package && killall $cosmog_package'"
           # launch cosmog
-          timeout 10s adb -s $i shell "su -c 'am start -n $cosmog_package/.MainActivity'"
+          adb -s $i shell "su -c 'am start -n $cosmog_package/.MainActivity'"
           echo "[cosmog] launched"
       else
           echo "[cosmog] Skipping $i due to connection error."
@@ -384,7 +396,7 @@ magisk_repackage() {
   for i in "${devices[@]}";do
     if adb_connect_device "$i"; then
         echo "[magisk] attempting to repackage magisk..."
-        timeout 10s adb -s $i shell "su -c '/system/bin/sh /data/local/tmp/redroid_device.sh repackage_magisk'"
+        adb -s $i shell "su -c '/system/bin/sh /data/local/tmp/redroid_device.sh repackage_magisk'"
         sleep 40
         timeout 10s echo "[magisk] reboot needed...sleep 20"
         adb -s $i shell "su -c 'reboot'"
