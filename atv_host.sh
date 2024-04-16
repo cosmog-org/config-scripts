@@ -336,15 +336,13 @@ pogo_install () {
     for i in "${devices[@]}"; do
         if connect_device "$i" "$port"; then
             echo "[pogo] checking for installed package on device $i"
-
+            
             # check if the package exists
             if adb -s $i shell "su -c 'pm list packages | grep -q \"$pogo_package\"'"; then
-                echo "[pogo] app not installed, preparing to install"
-            else
-                # get installed version
+                # package exists, checking version
                 installed_version=$(adb -s $i shell dumpsys package $pogo_package | grep versionName | cut -d "=" -f 2 | tr -d '\r')
                 echo "[pogo] installed version is '$installed_version'"
-
+                
                 # check if the installed version is outdated
                 if [[ "$(printf '%s\n' "$pogo_version" "$installed_version" | sort -V | head -n1)" != "$installed_version" ]]; then
                     echo "[pogo] installed version is outdated, preparing to update"
@@ -355,8 +353,10 @@ pogo_install () {
                     echo "[pogo] already up-to-date, skipping install"
                     continue  # Skip to the next device
                 fi
+            else
+                echo "[pogo] app not installed, preparing to install"
             fi
-
+            
             # Define APK based on architecture type
             apk_to_install="${apk_64}"  # Default to 64-bit
             if [[ "$arch_type" == "32" ]]; then
@@ -369,7 +369,7 @@ pogo_install () {
                     apk_to_install="${apk_32}"
                 fi
             fi
-
+            
             # Install the selected APK
             if [[ -n "$apk_to_install" ]]; then
                 echo "[pogo] Installing $apk_to_install on $i"
