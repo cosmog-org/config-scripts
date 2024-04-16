@@ -327,48 +327,51 @@ opengl_warning() {
 pogo_install () {
     # Loop through each device
     for i in "${devices[@]}"; do
-      if connect_device "$i" "$port"; then
-          echo "[pogo] checking installed version on device $i"
+        if connect_device "$i" "$port"; then
+            echo "[pogo] checking installed version on device $i"
 
-          # Fetch the current version installed on the device
-          installed_version=$(adb -s $i shell dumpsys package com.nianticlabs.pokemongo | grep versionName | cut -d "=" -f 2 | tr -d '\r')
+            # get photo version
+            installed_version=$(adb -s $i shell dumpsys package com.nianticlabs.pokemongo | grep versionName | cut -d "=" -f 2 | tr -d '\r')
 
-          # Check if the installed version is less than the desired version
-          if [[ "$(printf '%s\n' "$pogo_version" "$installed_version" | sort -V | head -n1)" == "$pogo_version" ]]; then
-              echo "[pogo] already up-to-date, skipping install"
-              continue  # Skip to the next device
-          fi
+            # Check if the package is not installed or the installed version is outdated
+            if [[ -z "$installed_version" ]] || [[ "$(printf '%s\n' "$pogo_version" "$installed_version" | sort -V | head -n1)" != "$installed_version" ]]; then
+                echo "[pogo] App not installed or outdated, preparing to install/update"
+            else
+                echo "[pogo] already up-to-date, skipping install"
+                continue  # Skip to the next device
+            fi
 
-          echo "[pogo] killing app if it exists and uninstalling"
-          adb -s $i shell "su -c 'am force-stop $pogo_package && killall $pogo_package'"
-          adb -s $i uninstall $pogo_package
+            echo "[pogo] killing app if it exists and uninstalling"
+            adb -s $i shell "su -c 'am force-stop $pogo_package && killall $pogo_package'"
+            adb -s $i uninstall $pogo_package
 
-          # Define APK based on architecture type, simplified for demonstration
-          apk_to_install="${apk_64}"  # Default to 64-bit for example purposes
-          if [[ "$arch_type" == "32" ]]; then
-              apk_to_install="${apk_32}"
-          elif [[ "$arch_type" == "mixed" ]]; then
-              device_arch=$(adb -s $i shell getprop ro.product.cpu.abi | tr -d '\r')
-              if [[ "$device_arch" == *"arm64"* ]]; then
-                  apk_to_install="${apk_64}"
-              elif [[ "$device_arch" == *"armeabi"* ]]; then
-                  apk_to_install="${apk_32}"
-              fi
-          fi
+            # Define APK based on architecture type
+            apk_to_install="${apk_64}"  # Default to 64-bit
+            if [[ "$arch_type" == "32" ]]; then
+                apk_to_install="${apk_32}"
+            elif [[ "$arch_type" == "mixed" ]]; then
+                device_arch=$(adb -s $i shell getprop ro.product.cpu.abi | tr -d '\r')
+                if [[ "$device_arch" == *"arm64"* ]]; then
+                    apk_to_install="${apk_64}"
+                elif [[ "$device_arch" == *"armeabi"* ]]; then
+                    apk_to_install="${apk_32}"
+                fi
+            fi
 
-          # Install the selected APK
-          if [[ -n "$apk_to_install" ]]; then
-              echo "[pogo] Installing $apk_to_install on $i"
-              timeout 10m adb -s $i install -r "$apk_to_install"
-          else
-              echo "[pogo] No compatible apk found for $i"
-          fi
-      else
-          echo "[pogo] skipping $i due to connection error."
-          continue
-      fi
+            # Install the selected APK
+            if [[ -n "$apk_to_install" ]]; then
+                echo "[pogo] Installing $apk_to_install on $i"
+                timeout 10m adb -s $i install -r "$apk_to_install"
+            else
+                echo "[pogo] No compatible apk found for $i"
+            fi
+        else
+            echo "[pogo] skipping $i due to connection error."
+            continue
+        fi
     done
 }
+
 
 free_space() {
     # Loop through each device
@@ -442,6 +445,7 @@ if [ $# -eq 0 ]; then
         cosmog_magisk_denylist || { log "[error] setting up denylist"; exit 1; }
         cosmog_lib || { log "[error] installing lib"; exit 1; }
         pogo_install || { log "[error] installing pogo"; exit 1; }
+        opengl_warning || { log "[error] installing pogo"; exit 1; }
         cosmog_start || { log "[error] starting cosmog"; exit 1; }
     }
 
