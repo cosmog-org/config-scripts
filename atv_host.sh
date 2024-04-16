@@ -5,6 +5,9 @@
 # Ensure the cosmog directory exists
 cd "$(dirname "$0")"
 
+# Ensure unset variables will crash the script instead of causing silent corruption
+set -u
+
 # xml file for older opengl 2.0 devices to avoid warning pop-up
 # download warning.xml from this repo
 xml_file="warning.xml"
@@ -85,7 +88,7 @@ logfile=${logdir}/cosmog.script.log
 cerror=${logdir}/connection_error.log
 
 log() {
-    line="$(date + '[%Y-%m-%dT%H:%M:%S %Z]') $@"
+    line="$(date +'[%Y-%m-%dT%H:%M:%S %Z]') $@"
     echo "$line"
 }
 
@@ -286,7 +289,7 @@ cosmog_start() {
       if connect_device "$i" "$port"; then
           # launch cosmog if start=true
           adb -s $i shell "su -c monkey -p com.sy1vi3.cosmog 1"
-          echo "[script]: ${deviceName} is complete and cosmog launched"
+          echo "[script]: $i is complete and cosmog launched"
       else
           echo "[cosmog] Skipping $i due to connection error."
           continue
@@ -315,7 +318,8 @@ opengl_warning() {
             # Push XML file to the device
             adb -s $i push "$xml_file" /data/local/tmp
             adb -s $i shell "su -c 'chown root:root /data/local/tmp/$xml_file'"
-            adb -s $i shell "su -c 'cp /data/local/tmp/$xml_file $xml_path$xmlname'"
+            adb -s $i shell "su -c 'mkdir -p $xml_path'"
+            adb -s $i shell "su -c 'cp /data/local/tmp/$xml_file $xml_path$xml_name'"
         fi
     else
         echo "[xml] Skipping $i due to connection error."
@@ -424,7 +428,7 @@ pogo_clean_install() {
     pogo_install || { log "[error] installing pogo"; exit 1; }
     opengl_warning || { log "[error] installing pogo"; exit 1; }
     cosmog_atv_script || { log "[error] transferring device setup script"; exit 1; }
-    cosmog_do_settings || { log "[error] generating and transferring cosmog config json"; exit 1; }
+    cosmog_do_settings || { log "[error] performing global config on device"; exit 1; }
     cosmog_install || { log "[error] installing cosmog"; exit 1; }
     cosmog_root_policy || { log "[error] inserting cosmog root policy"; exit 1; }
     cosmog_magisk_denylist || { log "[error] setting up denylist"; exit 1; }
@@ -439,7 +443,7 @@ if [ $# -eq 0 ]; then
     main() {
         cosmog_atv_script || { log "[error] transferring device setup script"; exit 1; }
         cosmog_config || { log "[error] generating and transferring cosmog config json"; exit 1; }
-        cosmog_do_settings || { log "[error] generating and transferring cosmog config json"; exit 1; }
+        cosmog_do_settings || { log "[error] performing global config on device"; exit 1; }
         cosmog_install || { log "[error] installing cosmog"; exit 1; }
         cosmog_root_policy || { log "[error] inserting cosmog root policy"; exit 1; }
         cosmog_magisk_denylist || { log "[error] setting up denylist"; exit 1; }
