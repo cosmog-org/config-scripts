@@ -59,18 +59,6 @@ reboot_cleanup=false
 # reboot sleep is set to 180s (3mins)
 reboot_denylist=false
 
-# Clone joltik repository if not already cloned
-if [ ! -d ./joltik ]; then
-  git clone https://github.com/sy1vi3/joltik.git
-fi
-
-cd ./joltik
-
-# Run joltik.py script with specified version for both arch
-python3 joltik.py --arch arm64-v8a --version "$lib_version"
-python3 joltik.py --arch armeabi-v7a --version "$lib_version"
-
-cd ..
 
 # Ensure devices.txt exists
 if [ ! -f devices.txt ]; then
@@ -98,6 +86,21 @@ touch "$logfile"
 # Read device list from devices.txt
 # ip address per line
 mapfile -t devices < devices.txt
+
+joltik(){
+    # Clone joltik repository if not already cloned
+    if [ ! -d ./joltik ]; then
+      git clone https://github.com/sy1vi3/joltik.git || return 1
+    fi
+    
+    cd ./joltik
+    
+    # Run joltik.py script with specified version for both arch
+    python3 joltik.py --arch arm64-v8a --version "$lib_version" || return 1
+    python3 joltik.py --arch armeabi-v7a --version "$lib_version" || return 1
+    
+    cd ..
+}
 
 connect_device() {
     local device_ip="$1"
@@ -418,6 +421,7 @@ cosmog_update() {
     cosmog_install || { log "[error] installing cosmog"; exit 1; }
     cosmog_root_policy || { log "[error] inserting cosmog root policy"; exit 1; }
     cosmog_magisk_denylist || { log "[error] setting up denylist"; exit 1; }
+    joltik || { log "[error] fetching lib with joltik"; exit 1; }
     cosmog_lib || { log "[error] installing lib"; exit 1; }
     opengl_warning || { log "[error] installing pogo"; exit 1; }
     cosmog_start || { log "[error] starting cosmog"; exit 1; }
@@ -432,6 +436,7 @@ pogo_clean_install() {
     cosmog_install || { log "[error] installing cosmog"; exit 1; }
     cosmog_root_policy || { log "[error] inserting cosmog root policy"; exit 1; }
     cosmog_magisk_denylist || { log "[error] setting up denylist"; exit 1; }
+    joltik || { log "[error] fetching lib with joltik"; exit 1; }
     cosmog_lib || { log "[error] installing lib"; exit 1; }
     cosmog_start || { log "[error] starting cosmog"; exit 1; }
 }
@@ -447,6 +452,7 @@ if [ $# -eq 0 ]; then
         cosmog_install || { log "[error] installing cosmog"; exit 1; }
         cosmog_root_policy || { log "[error] inserting cosmog root policy"; exit 1; }
         cosmog_magisk_denylist || { log "[error] setting up denylist"; exit 1; }
+        joltik || { log "[error] fetching lib with joltik"; exit 1; }
         cosmog_lib || { log "[error] installing lib"; exit 1; }
         pogo_install || { log "[error] installing pogo"; exit 1; }
         opengl_warning || { log "[error] installing opengl warning bypass"; exit 1; }
