@@ -335,25 +335,27 @@ pogo_install () {
     # Loop through each device
     for i in "${devices[@]}"; do
         if connect_device "$i" "$port"; then
-            echo "[pogo] checking installed version on device $i"
+            echo "[pogo] checking for installed package on device $i"
 
-            # get pogo version
-            installed_version=$(adb -s $i shell dumpsys package com.nianticlabs.pokemongo | grep versionName | cut -d "=" -f 2 | tr -d '\r')
-
-            # check if the pogo is not installed or the version is outdated
-            if [[ -z "$installed_version" ]]; then
-                echo "[pogo] app not installed, preparing to install/update"
-            elif [[ "$(printf '%s\n' "$pogo_version" "$installed_version" | sort -V | head -n1)" != "$installed_version" ]]; then
-                echo "[pogo] installed version is outdated, preparing to update"
+            # check if the package exists
+            if adb -s $i shell "su -c 'pm list packages | grep -q \"$pogo_package\"'"; then
+                echo "[pogo] app not installed, preparing to install"
             else
-                echo "[pogo] already up-to-date, skipping install"
-                continue  # Skip to the next device
+                # get installed version
+                installed_version=$(adb -s $i shell dumpsys package $pogo_package | grep versionName | cut -d "=" -f 2 | tr -d '\r')
+                echo "[pogo] installed version is '$installed_version'"
+
+                # check if the installed version is outdated
+                if [[ "$(printf '%s\n' "$pogo_version" "$installed_version" | sort -V | head -n1)" != "$installed_version" ]]; then
+                    echo "[pogo] installed version is outdated, preparing to update"
+                    echo "[pogo] killing app if it exists and uninstalling"
+                    adb -s $i shell "su -c 'am force-stop $pogo_package && killall $pogo_package'"
+                    adb -s $i uninstall $pogo_package
+                else
+                    echo "[pogo] already up-to-date, skipping install"
+                    continue  # Skip to the next device
+                fi
             fi
-
-
-            echo "[pogo] killing app if it exists and uninstalling"
-            adb -s $i shell "su -c 'am force-stop $pogo_package && killall $pogo_package'"
-            adb -s $i uninstall $pogo_package
 
             # Define APK based on architecture type
             apk_to_install="${apk_64}"  # Default to 64-bit
