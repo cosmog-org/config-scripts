@@ -445,7 +445,7 @@ if [ $# -eq 0 ]; then
         cosmog_magisk_denylist || { log "[error] setting up denylist"; exit 1; }
         cosmog_lib || { log "[error] installing lib"; exit 1; }
         pogo_install || { log "[error] installing pogo"; exit 1; }
-        opengl_warning || { log "[error] installing pogo"; exit 1; }
+        opengl_warning || { log "[error] installing opengl warning bypass"; exit 1; }
         cosmog_start || { log "[error] starting cosmog"; exit 1; }
     }
 
