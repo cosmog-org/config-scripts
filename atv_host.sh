@@ -85,7 +85,7 @@ logfile=${logdir}/cosmog.script.log
 cerror=${logdir}/connection_error.log
 
 log() {
-    line="$(date + '[%Y-%m-%dT%H:%M:%S %Z]') $@"
+    line="$(date +'[%Y-%m-%dT%H:%M:%S %Z]') $@"
     echo "$line"
 }
 
