@@ -305,7 +305,7 @@ opengl_warning() {
   for i in "${devices[@]}";do
     if connect_device "$i" "$port"; then
         # Fetch OpenGL version and extract major version directly
-        opengl_version=$(adb -s $i shell dumpsys SurfaceFlinger | grep "OpenGL" | sed -n 's/.*OpenGL ES \([0-9]\+\).*/\1/p')
+        opengl_version=$(adb -s $i shell dumpsys SurfaceFlinger | grep -o "OpenGL ES [0-9]*\.[0-9]*" | sed -n 's/OpenGL ES \([0-9]*\)\..*/\1/p')
 
         # Check if major_version was successfully extracted
         if [[ -z "$opengl_version" ]]; then
