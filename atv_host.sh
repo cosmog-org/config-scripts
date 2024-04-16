@@ -337,16 +337,19 @@ pogo_install () {
         if connect_device "$i" "$port"; then
             echo "[pogo] checking installed version on device $i"
 
-            # get photo version
+            # get pogo version
             installed_version=$(adb -s $i shell dumpsys package com.nianticlabs.pokemongo | grep versionName | cut -d "=" -f 2 | tr -d '\r')
 
-            # Check if the package is not installed or the installed version is outdated
-            if [[ -z "$installed_version" ]] || [[ "$(printf '%s\n' "$pogo_version" "$installed_version" | sort -V | head -n1)" != "$installed_version" ]]; then
-                echo "[pogo] App not installed or outdated, preparing to install/update"
+            # check if the pogo is not installed or the version is outdated
+            if [[ -z "$installed_version" ]]; then
+                echo "[pogo] app not installed, preparing to install/update"
+            elif [[ "$(printf '%s\n' "$pogo_version" "$installed_version" | sort -V | head -n1)" != "$installed_version" ]]; then
+                echo "[pogo] installed version is outdated, preparing to update"
             else
                 echo "[pogo] already up-to-date, skipping install"
                 continue  # Skip to the next device
             fi
+
 
             echo "[pogo] killing app if it exists and uninstalling"
             adb -s $i shell "su -c 'am force-stop $pogo_package && killall $pogo_package'"
