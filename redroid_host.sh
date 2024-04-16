@@ -78,14 +78,14 @@ adb_connect_device() {
     echo "[adb] trying to connect to ${device_ip}..."
     while (( attempt < max_retries )); do
         local output=$(timeout $timeout_duration adb connect "${device_ip}" 2>&1)
-        if [[ "$output" == *"Connected"* ]]; then
+        if [[ "$output" == *"connected"* ]]; then
             echo "[adb] connected successfully to ${device_ip}."
             return 0  # success
         elif [[ "$output" == *"offline"* ]]; then
             echo "[adb] device ${device_ip} is offline, retrying in 10 seconds..."
             ((attempt++))
             sleep 10
-        elif [[ "$output" == *"Connection refused"* ]]; then
+        elif [[ "$output" == *"connection refused"* ]]; then
             echo "[adb] connection refused to ${device_ip}. Exiting script."
             exit 1  # exit script completely
         elif [[ $? -eq 124 ]]; then  # Check if timeout occurred
