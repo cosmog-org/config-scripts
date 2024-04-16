@@ -172,13 +172,12 @@ if $manageRedroid ; then
     chmod +x redroid_host.sh
     dos2unix redroid_device.sh
     dos2unix redroid_host.sh
+    # Give the containers some time
+    sleep 30
     ./redroid_host.sh
 fi
 
 if $managePm2 ; then
-    # Let's wait a sec for the containers
-    echo "Waiting 15 seconds for containers..."
-    sleep 15
     pm2 start ./send_configs.sh --restart-delay 20000
     echo "PM2 Up"
     cd ~/cosmog/houndour
