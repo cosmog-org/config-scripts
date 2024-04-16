@@ -24,11 +24,12 @@
 
 4. **atv_host.sh**
     - This script must be run on a host on the same network as your android device(s)
-    - Requirements:
+    - Requirements in the directory:
+        - cosmog*.apk
         - atv_device.sh
         - warning.xml (disables opengl warning on opengl devices < 3)
         - devices.txt
-          - ip per line:
+          - ip or host per line:
           - 192.168.1.1, 192.168.1.2, etc
 
 5. **atv_device.sh**
