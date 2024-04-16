@@ -1,3 +1,5 @@
 joltik/
 *.apk
 script-logs/
+devices.txt
+vm.txt
