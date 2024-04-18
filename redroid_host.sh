@@ -203,6 +203,20 @@ setup_permissions_script() {
     done
 }
 
+setup_permissions_script_noroot() {
+    for i in "${devices[@]}";do
+      if adb_connect_device "$i"; then
+          sleep 2
+          # granting scripts executable permission
+          adb -s $i shell "su -c chmod +x /data/local/tmp/redroid_device.sh"
+          echo "[setup] script chmod +x successful"
+          sleep 2
+      else
+          echo "[magisk] Skipping $i due to connection error."
+          exit 1
+      fi
+    done
+}
 
 magisk_setup_init() {
     for i in "${devices[@]}";do
@@ -407,11 +421,15 @@ magisk_repackage() {
 }
 
 cosmog_update() {
+    setup_push_script || { log "[error] transferring redroid setup script"; exit 1; }
+    setup_permissions_script_noroot || { log "[error] granting redroid_device.sh chmod +x"; exit 1; }
     cosmog_install || { log "[error] installing cosmog"; exit 1; }
     cosmog_start || { log "[error] launching cosmog"; exit 1; }
 }
 
 cosmog_lib_update() {
+    setup_push_script || { log "[error] transferring redroid setup script"; exit 1; }
+    setup_permissions_script_noroot || { log "[error] granting redroid_device.sh chmod +x"; exit 1; }
     cosmog_lib || { log "[error] installing lib"; exit 1; }
     cosmog_start || { log "[error] launching cosmog"; exit 1; }
 }
