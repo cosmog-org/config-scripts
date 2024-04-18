@@ -42,7 +42,7 @@ setup_magisk_denylist() {
     # add cosmog workers to denylist
     i=1
     while [ $i -le 100 ]; do
-      "$magisk" --sqlite "REPLACE INTO denylist (package_name,process) VALUES('com.sy1vi3.cosmog','com.sy1vi3.cosmog:worker$i');"
+      "$magisk" --sqlite "REPLACE INTO denylist (package_name,process) VALUES('com.sy1vi3.cosmog','com.sy1vi3.cosmog:worker$i.com.nianticlabs.pokemongo');"
       i=$((i + 1))
     done
     # enable zygisk
