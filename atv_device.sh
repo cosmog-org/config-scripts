@@ -1,8 +1,10 @@
 #!/system/bin/sh
-
 magisk='/sbin/magisk'
 logdir=/sdcard/.magisk-install
 logfile=${logdir}/install.log
+
+mkdir -p "$logdir"
+touch "$logfile"
 
 log() {
     line="`date +'[%Y-%m-%dT%H:%M:%S %Z]'` $@"
