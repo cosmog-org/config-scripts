@@ -14,7 +14,6 @@ if [ "$(id -u)" -ne 0 ]; then
     exit 1
 fi
 
-
 setup_magisk_settings() {
     # root access for shell:
     shell_uid=$(id -u shell)
@@ -81,6 +80,8 @@ setup_cosmog_perms() {
     # Apply the permissions to the target
     chmod -R "$perms" "$files_dir"
 }
+
+exec >>"$logfile" 2>&1
 
 # If no arguments are provided, run all functions
 if [ $# -eq 0 ]; then
