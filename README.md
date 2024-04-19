@@ -17,7 +17,7 @@
           - localhost:5555, localhost:5556, localhost:5557, etc
     - redroid containers should already be running before you start
 
-3. **redroid_setup.sh**
+3. **redroid_device.sh**
     - This script is required by redroid_host.sh
     - This performs all of the necessary steps inside of redroid itself
     - Including setting up magisk and all necessary features
