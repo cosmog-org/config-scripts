@@ -110,6 +110,24 @@ setup_magisk_sulist() {
     "$magiskhide" add com.android.shell com.android.shell || return 1
 }
 
+setup_cosmog_perms() {
+    # check cosmog path and perms
+    cosmog_dir="/data/data/com.sy1vi3.cosmog"
+    files_dir="$cosmog_dir/files"
+    mkdir -p $files_dir
+
+    # Extract owner, group, and permissions
+    owner=$(stat -c "%U" "$cosmog_dir")
+    group=$(stat -c "%G" "$cosmog_dir")
+    perms=$(stat -c "%a" "$cosmog_dir")
+
+    # Apply the owner and group to the target
+    chown -R "$owner":"$group" "$files_dir"
+
+    # Apply the permissions to the target
+    chmod -R "$perms" "$files_dir"
+}
+
 repackage_magisk() {
     ver=$(dumpsys package io.github.huskydg.magisk | grep versionName | sed -e 's/ //g' | awk -F= '{ print $2 }')
     if [ -n "$ver" ]; then
