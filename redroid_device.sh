@@ -1,5 +1,4 @@
 #!/system/bin/sh
-set -x
 cd "$(dirname "$0")"
 
 magisk=`which magisk`
@@ -22,6 +21,11 @@ if [ "$(id -u)" -ne 0 ]; then
 fi
 
 setup_magisk_app() {
+    # initialize magisk application setup by completing final steps
+    if [ -f "$logdir/setup_magisk_app" ]; then
+        log '[script] setup_magisk_app already configured, skipping'
+        return 0
+    fi
     log '[magisk] final install steps initiating'
     am start io.github.huskydg.magisk/com.topjohnwu.magisk.ui.MainActivity || return 1
     # wait for pop-up to finish magisk install
@@ -36,34 +40,60 @@ setup_magisk_app() {
     sleep 1
     input keyevent 23
     log '[magisk] rebooting redroid to complete install'
+    touch $logdir/setup_magisk_app
 }
 
 setup_magisk_settings() {
     # root access for shell:
+    if [ -f "$logdir/setup_magisk_settings" ]; then
+        log '[script] setup_magisk_settings already configured, skipping'
+        return 0
+    fi
     shell_uid=$(id -u shell)
     log "Got $shell_uid for shell UID"
     "$magisk" --sqlite "REPLACE INTO policies (uid,policy,until,logging,notification) VALUES($shell_uid,2,0,1,1);" || return 1
+    touch $logdir/setup_magisk_settings
 }
 
 do_settings() {
+    # add global settings to avoid pop-ups and obstructions for input events
+    if [ -f "$logdir/do_settings" ]; then
+        log '[script] do_settings already configured, skipping'
+        return 0
+    fi
     # settings put global policy_control 'immersive.navigation=*'
     # settings put global policy_control 'immersive.full=*'
     settings put secure immersive_mode_confirmations confirmed || return 1
-    # settings put global heads_up_enabled 0
+    settings put global heads_up_enabled 0 || return 1
+    settings put global heads_up_notifications_enabled 0 || return 1
     settings put global bluetooth_disabled_profiles 1 || return 1
     settings put global bluetooth_on 0 || return 1
     settings put global package_verifier_user_consent -1 || return 1
+    appops set com.android.vending POST_NOTIFICATION ignore || return 1
+    appops set com.google.android.gms POST_NOTIFICATION ignore || return 1
+    touch $logdir/do_settings
 }
 
 setup_magisk_denylist() {
+    # add packages to denylist
+    if [ -f "$logdir/setup_magisk_denylist" ]; then
+        log '[script] setup_magisk_denylist already configured, skipping'
+        return 0
+    fi
     "$magisk" --sqlite "REPLACE INTO denylist (package_name,process) VALUES('com.android.vending','com.android.vending');" || return 1
     "$magisk" --sqlite "REPLACE INTO denylist (package_name,process) VALUES('com.google.android.gms','com.google.android.gms');" || return 1
     "$magisk" --sqlite "REPLACE INTO denylist (package_name,process) VALUES('com.google.android.gms.setup','com.google.android.gms.setup');" || return 1
     "$magisk" --sqlite "REPLACE INTO denylist (package_name,process) VALUES('com.google.android.gsf','com.google.android.gsf');" || return 1
     "$magisk" --sqlite "REPLACE INTO denylist (package_name,process) VALUES('com.nianticlabs.pokemongo','com.nianticlabs.pokemongo');" || return 1
+    touch $logdir/setup_magisk_denylist
 }
 
-setup_magisksulist_app() {
+setup_magisksulist_app() {.
+    # enable magiskhide and sulist enforcement
+    if [ -f "$logdir/setup_magisksulist_app" ]; then
+        log '[script] setup_magisksulist_app already configured, skipping'
+        return 0
+    fi
     log '[magisk] magisk is nekkid, attempting to censor it'
     am start io.github.huskydg.magisk/com.topjohnwu.magisk.ui.MainActivity
     sleep 5
@@ -91,9 +121,15 @@ setup_magisksulist_app() {
     input keyevent 23
     sleep 1
     input keyevent HOME
+    touch $logdir/setup_magisksulist_app
 }
 
 setup_cosmog_policies() {
+    # insert cosmog into magisk policies for root
+    if [ -f "$logdir/setup_cosmog_policies" ]; then
+        log '[script] setup_cosmog_policies already configured, skipping'
+        return 0
+    fi
     cosmog_uid=$(dumpsys package com.sy1vi3.cosmog | grep userId= | awk -F= '{ print $2 }')
     if [ -n "$cosmog_uid" ]; then
         "$magisk" --sqlite "REPLACE INTO policies (uid,policy,until,logging,notification) VALUES($cosmog_uid,2,0,1,0);" || return 1
@@ -105,9 +141,15 @@ setup_cosmog_policies() {
 }
 
 setup_magisk_sulist() {
+    # add exeggcute and shell to sulist enforcement
+    if [ -f "$logdir/setup_magisk_sulist" ]; then
+        log '[script] setup_magisk_sulist already configured, skipping'
+        return 0
+    fi
     "$magiskhide" add com.sy1vi3.cosmog com.sy1vi3.cosmog || return 1
     "$magiskhide" add com.sy1vi3.cosmog com.sy1vi3.cosmog:phoenix || return 1
     "$magiskhide" add com.android.shell com.android.shell || return 1
+    touch $logdir/setup_magisk_sulist
 }
 
 setup_cosmog_perms() {
@@ -129,6 +171,11 @@ setup_cosmog_perms() {
 }
 
 repackage_magisk() {
+    # repackage magisk to hide it's package name as a detection point
+    if [ -f "$logdir/repackage_magisk" ]; then
+        log '[script] repackage_magisk already configured, skipping'
+        return 0
+    fi
     ver=$(dumpsys package io.github.huskydg.magisk | grep versionName | sed -e 's/ //g' | awk -F= '{ print $2 }')
     if [ -n "$ver" ]; then
         log '[magisk] magisk is nekkid, attempting to censor it'
@@ -204,7 +251,10 @@ repackage_magisk() {
         if [ -n "$ver" ]; then
             log '[magisk] repackage failed.'
             return 1
+        else
+            touch $logdir/repackage_magisk
         fi
+
     fi
 }
 
