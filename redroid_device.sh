@@ -61,19 +61,29 @@ do_settings() {
         log '[script] do_settings already configured, skipping'
         return 0
     fi
-    # settings put global policy_control 'immersive.navigation=*'
-    # settings put global policy_control 'immersive.full=*'
-    settings put secure immersive_mode_confirmations confirmed || return 1
-    settings put global heads_up_enabled 0 || return 1
-    settings put global heads_up_notifications_enabled 0 || return 1
     settings put global bluetooth_disabled_profiles 1 || return 1
     settings put global bluetooth_on 0 || return 1
     settings put global package_verifier_user_consent -1 || return 1
-    appops set com.android.vending POST_NOTIFICATION ignore || return 1
-    appops set com.google.android.gms POST_NOTIFICATION ignore || return 1
+    settings put secure immersive_mode_confirmations confirmed || return 1
     touch $logdir/do_settings
 }
 
+do_more_settings() {
+    # add more global settings after magisk events are done
+    if [ -f "$logdir/do_more_settings" ]; then
+        log '[script] do_more_settings already configured, skipping'
+        return 0
+    fi
+    settings put global policy_control 'immersive.navigation=*' || return 1
+    settings put global policy_control 'immersive.full=*' || return 1
+    settings put global heads_up_enabled 0 || return 1
+    settings put global heads_up_notifications_enabled 0 || return 1
+    appops set com.android.vending POST_NOTIFICATION ignore || return 1
+    appops set com.google.android.gms POST_NOTIFICATION ignore || return 1
+    touch $logdir/do_more_settings
+}
+
+    
 setup_magisk_denylist() {
     # add packages to denylist
     if [ -f "$logdir/setup_magisk_denylist" ]; then
