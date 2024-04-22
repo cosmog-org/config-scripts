@@ -549,10 +549,9 @@ if [ $# -eq 0 ]; then
     main() {
         setup_push_script || { log "[error] transferring redroid setup script"; exit 1; }
         setup_permissions_script || { log "[error] granting redroid_device.sh chmod +x"; exit 1; }
+        magisk_setup_settings || { log "[error] giving shell su perms"; exit 1; }
         magisk_setup_init || { log "[error] completing magisk init"; exit 1; }
         reboot_redroid || { log "[error] rebooting redroid"; exit 1; }
-        magisk_setup_settings || { log "[error] giving shell su perms"; exit 1; }
-        setup_do_settings || { log "[error] enabling global settings"; exit 1; }
         magisk_denylist || { log "[error] setting up denylist"; exit 1; }
         magisk_sulist || { log "[error] enabling sulist"; exit 1; }
         reboot_redroid || { log "[error] rebooting redroid"; exit 1; }
