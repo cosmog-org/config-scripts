@@ -286,7 +286,7 @@ magisk_setup_init() {
 setup_do_settings() {
     for i in "${devices[@]}";do
       if adb_connect_device "$i"; then
-          # running global commands avoid pop-ups and issues
+          # running initial global commands to avoid pop-ups and issues
           echo "[setup] setting up global settings"
           adb -s $i shell "su -c '/system/bin/sh /data/local/tmp/redroid_device.sh do_settings'"
           echo "[setup] global settings complete"
@@ -296,7 +296,6 @@ setup_do_settings() {
       fi
     done
 }
-
 
 magisk_denylist() {
     for i in "${devices[@]}";do
@@ -498,6 +497,20 @@ magisk_repackage() {
   return 0
 }
 
+setup_do_more_settings() {
+    for i in "${devices[@]}";do
+      if adb_connect_device "$i"; then
+          # running more global commands to avoid pop-ups and issues
+          echo "[setup] setting up more global settings"
+          adb -s $i shell "su -c '/system/bin/sh /data/local/tmp/redroid_device.sh do_more_settings'"
+          echo "[setup] more global settings complete"
+      else
+          echo "[setup] Skipping $i due to connection error."
+          exit 1
+      fi
+    done
+}
+
 reboot_redroid() {
     for i in "${devices[@]}";do
       if adb_connect_device "$i"; then
@@ -548,6 +561,8 @@ if [ $# -eq 0 ]; then
         cosmog_sulist || { log "[error] adding cosmog to sulist"; exit 1; }
         reboot_redroid || { log "[error] reboot redroid"; exit 1; }
         check_cosmog_sulist || { log "[error] verifying sulist packages"; exit 1; }
+        setup_do_more_settings || { log "[error] enabling global settings"; exit 1; }
+        reboot_redroid || { log "[error] reboot redroid"; exit 1; }
         cosmog_lib || { log "[error] installing lib"; exit 1; }
         if $cosmog_startup ; then
             cosmog_start || { log "[error] launching cosmog"; exit 1; }
