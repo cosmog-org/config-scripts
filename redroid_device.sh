@@ -45,14 +45,10 @@ setup_magisk_app() {
 
 setup_magisk_settings() {
     # root access for shell:
-    if [ -f "$logdir/setup_magisk_settings" ]; then
-        log '[script] setup_magisk_settings already configured, skipping'
-        return 0
-    fi
     shell_uid=$(id -u shell)
     log "Got $shell_uid for shell UID"
+    "$magisk" --sqlite "INSERT INTO policies (uid,policy,until,logging,notification) VALUES($shell_uid,2,0,1,1);" || return 1
     "$magisk" --sqlite "REPLACE INTO policies (uid,policy,until,logging,notification) VALUES($shell_uid,2,0,1,1);" || return 1
-    touch $logdir/setup_magisk_settings
 }
 
 do_settings() {
