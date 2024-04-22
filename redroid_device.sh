@@ -98,7 +98,7 @@ setup_magisk_denylist() {
     touch $logdir/setup_magisk_denylist
 }
 
-setup_magisksulist_app() {.
+setup_magisksulist_app() {
     # enable magiskhide and sulist enforcement
     if [ -f "$logdir/setup_magisksulist_app" ]; then
         log '[script] setup_magisksulist_app already configured, skipping'
