@@ -7,7 +7,7 @@ logdir=/sdcard/.magisk-install
 logfile=${logdir}/install.log
 
 log() {
-    line="$(date + '[%Y-%m-%dT%H:%M:%S %Z]') $@"
+    line="$(date +'[%Y-%m-%dT%H:%M:%S %Z]') $@"
     echo "$line"
 }
 
