@@ -69,129 +69,173 @@ mapfile -t devices < vm.txt
 # handle adb connect and catch errors to avoid bad installs
 adb_connect_device() {
     local device_ip="$1"
-    local timeout_duration="60s"
-    local max_retries=3
+    local timeout_duration="3m"
+    local max_retries=10
+    local max_auth_retries=3
     local attempt=0
+    local auth_attempt=0
+    local success=0
+    local sleep_time=10
 
-    # disconnect before connecting to avoid already connected status
-    sleep 2
     adb disconnect "${device_ip}"
     sleep 2
     echo "[adb] trying to connect to ${device_ip}..."
-    while (( attempt < max_retries )); do
+
+    while (( attempt < max_retries && success == 0 )); do
         local output=$(timeout $timeout_duration adb connect "${device_ip}" 2>&1)
-        if [[ -z "$output" ]]; then
-            # attempt to resolve empty output issue exiting script too quickly
-            echo "[adb] No output received, possibly a delayed response. Waiting and retrying..."
-            ((attempt++))
-            sleep 10
-            continue
-        elif [[ "$output" == *"connected"* || "$output" == *"success"* ]]; then
+        local exit_status=$?
+
+        if [[ "$output" == *"connected"* || "$output" == *"already connected to"* ]]; then
             echo "[adb] connected successfully to ${device_ip}."
-            return 0  # success
-        elif [[ "$output" == *"offline"* ]]; then
-            echo "[adb] device ${device_ip} is offline, retrying in 10 seconds..."
-            ((attempt++))
-            sleep 30
-        elif [[ "$output" == *"connection refused"* ]]; then
-            echo "[adb] connection refused to ${device_ip}. Exiting script."
-            exit 1  # exit script completely
-        elif [[ $? -eq 124 ]]; then  # Check if timeout occurred
+            success=1
+        elif [[ "$output" == *"failed to auth"* || "$output" == *"ADB_VENDOR_KEYS"* ]]; then
+            if (( auth_attempt < max_auth_retries )); then
+                echo "[adb] authentication failure detected"
+                echo "[adb] retrying after restarting adb server (${auth_attempt}/${max_auth_retries})..."
+                adb kill-server
+                sleep 5
+                adb start-server
+                ((auth_attempt++))
+                continue
+            else
+                echo "[adb] critical error: persistent auth failure after ${max_auth_retries} attempts."
+                echo "[adb] recommended to blow out the vm data folder and restart the container"
+                exit 1
+            fi
+        elif [[ -z "$output" || "$output" == *"offline"* || "$output" == *"connection refused"* ]]; then
+            echo "[adb] warning: $output. retrying connection attempt ${attempt}..."
+        elif [[ "$exit_status" -eq 124 ]]; then  #
             echo "[adb] connection attempt to ${device_ip} timed out."
             echo "${device_ip} Timeout" >> "$logfile"
-            exit 1  # Failure due to timeout, terminate script
         else
-            echo "[error] connecting to ${device_ip}: $output"
+            echo "[adb] error connecting to ${device_ip}: $output"
             echo "${device_ip} Error" >> "$logfile"
-            exit 1  # Unknown failure, terminate script
         fi
-        sleep 2
+        
+        ((attempt++))
+        sleep $sleep_time
     done
-    echo "[adb] max retries reached, unable to connect to ${device_ip}."
-    exit 1  # Failure after retries
+
+    if [[ success -eq 0 ]]; then
+        echo "[adb] max retries reached, unable to connect to ${device_ip}."
+        exit 1
+    fi
 }
 
 # handle connecting via root to avoid bad installs
 adb_root_device() {
     local device_ip="$1"
-    local timeout_duration="60s"
+    local timeout_duration="3m"
     local max_retries=3
+    local auth_attempt=0
+    local max_auth_retries=3
     local attempt=0
+    local success=0
+    local sleep_time=10
 
-    echo "[adb] trying to connect as root to ${device_ip}"
+    echo "[adb] Trying to connect as root to ${device_ip}."
     sleep 2
-    while (( attempt < max_retries )); do
+
+    while (( attempt < max_retries && success == 0 )); do
         local output=$(timeout $timeout_duration adb -s "${device_ip}" root 2>&1)
-        # try to catch outputs and respond accordingly
-        if [[ -z "$output" ]]; then
-            # attempt to resolve empty output issue exiting script too quickly
-            echo "[adb] No output received, possibly a delayed response. Waiting and retrying..."
-            ((attempt++))
-            sleep 10
-            continue
-        elif [[ "$output" == *"restarting adbd"* || "$output" == *"already running"* || "$output" == *"success"* ]]; then
-            echo "[adb] running as root successfully ${device_ip}."
-            return 0  # success
-        elif [[ "$output" == *"error"* ]]; then
-            echo "[adb] device ${device_ip} is offline, retrying in 10 seconds..."
-            ((attempt++))
-            sleep 10
+        local exit_status=$?
+
+        if [[ "$output" == *"restarting adbd"* || "$output" == *"already running as root"* || "$output" == *"success"* ]]; then
+            echo "[adb] running as root successfully on ${device_ip}."
+            success=1
+        elif [[ -z "$output" ]]; then
+            echo "[adb] no output received, possibly a delayed response. waiting and retrying..."
+        elif [[ "$output" == *"error"* && ! "$output" == *"failed to auth"* && ! "$output" == *"ADB_VENDOR_KEYS"* ]]; then
+            echo "[adb] error: ${output}. retrying in $sleep_time seconds..."
         elif [[ "$output" == *"production builds"* ]]; then
             echo "[adb] cannot run as root in production builds on ${device_ip}."
             echo "[adb] this error means your redroid image is not correct."
-            exit 1  # exit script completely
-        elif [[ $? -eq 124 ]]; then  # Check if timeout occurred
+            exit 1  # Exit script completely, non-recoverable error - bad image
+        elif [[ "$output" == *"failed to auth"* || "$output" == *"ADB_VENDOR_KEYS"* ]]; then
+            if (( auth_attempt < max_auth_retries )); then
+                echo "[adb] authentication failure detected. retrying after restarting ADB server (${auth_attempt}/${max_auth_retries})..."
+                adb kill-server
+                sleep 5
+                adb start-server
+                sleep 5
+                timeout 30 adb connect "${device_ip}"
+                ((auth_attempt++))
+                continue
+            else
+                echo "[adb] critical persistent failure after ${max_auth_retries} attempts."
+                echo "[adb] rm -rf data folder and restart container"
+                exit 1
+            fi
+        elif [[ $exit_status -eq 124 ]]; then
             echo "[adb] connection attempt to ${device_ip} timed out."
             echo "${device_ip} Timeout" >> "$logfile"
-            exit 1  # Failure due to timeout, terminate script
         else
-            echo "[error] connecting to ${device_ip}: $output"
+            echo "[error] unexpected issue when connecting to ${device_ip}: $output"
             echo "${device_ip} Error" >> "$logfile"
-            exit 1  # Unknown failure, terminate script
         fi
-        sleep 2
+
+        ((attempt++))
+        sleep $sleep_time
     done
-    echo "[adb] Max retries reached, unable to connect to ${device_ip}."
-    exit 1  # Failure after retries
+
+    if [[ success -eq 0 ]]; then
+        echo "[adb] max retries reached, unable to connect as root to ${device_ip}."
+        exit 1
+    fi
 }
 
 # handle unrooting to avoid adb_vendor_key unpairing hell
 adb_unroot_device() {
     local device_ip="$1"
-    local timeout_duration="60s"
+    local timeout_duration="3m"
     local max_retries=3
     local attempt=0
+    local success=0
+    local sleep_time=10
 
     echo "[adb] trying to unroot on ${device_ip}"
-    while (( attempt < max_retries )); do
+    sleep 2
+
+    while (( attempt < max_retries && success == 0 )); do
         local output=$(timeout $timeout_duration adb -s "${device_ip}" unroot 2>&1)
-        # try to catch outputs and respond accordingly
-        if [[ -z "$output" ]]; then
-            # attempt to resolve empty output issue exiting script too quickly
-            echo "[adb] No output received, possibly a delayed response. Waiting and retrying..."
-            ((attempt++))
-            sleep 10
-            continue
-        elif [[ "$output" == *"restarting adb"* || "$output" == *"not running as root"* ]]; then
+        local exit_status=$?
+
+        if [[ "$output" == *"restarting adbd as non-root"* || "$output" == *"not running as root"* ]]; then
             echo "[adb] unroot is successful ${device_ip}."
-            return 0  # success
+            success=1
+        elif [[ -z "$output" ]]; then
+            echo "[adb] no output received, possibly a delayed response. waiting and retrying..."
         elif [[ "$output" == *"error"* ]]; then
-            echo "[adb] device ${device_ip} is offline, retrying in 10 seconds..."
-            ((attempt++))
-            sleep 30
-        elif [[ $? -eq 124 ]]; then  # Check if timeout occurred
+            echo "[adb] device ${device_ip} is offline, retrying in $sleep_time seconds..."
+        elif [[ $exit_status -eq 124 ]]; then
             echo "[adb] unroot attempt to ${device_ip} timed out."
             echo "${device_ip} Timeout" >> "$logfile"
-            exit 1  # Failure due to timeout, terminate script
         else
             echo "[error] unrooting ${device_ip}: $output"
             echo "${device_ip} Error" >> "$logfile"
-            exit 1  # Unknown failure, terminate script
         fi
-        sleep 2
+
+        ((attempt++))
+        sleep $sleep_time
     done
-    echo "[adb] Max retries reached, unable to unroot ${device_ip}."
-    exit 1  # Failure after retries
+
+    if [[ success -eq 0 ]]; then
+        echo "[adb] max retries reached, attempting a server restart as final attempt to unroot ${device_ip}."
+        adb kill-server
+        sleep 5
+        adb start-server
+        sleep 5
+        timeout 30 adb connect "${device_ip}"
+        local final_output=$(adb -s "${device_ip}" unroot 2>&1)
+        if [[ "$final_output" == *"restarting adbd as non-root"* || "$final_output" == *"not running as root"* ]]; then
+            echo "[adb] final unroot attempt successful on ${device_ip}."
+        else
+            echo "[adb] final unroot attempt failed on ${device_ip}: $final_output"
+            echo "[adb] consider restarting container and restarting script"
+            echo "${device_ip} Error" >> "$logfile"
+            exit 1
+        fi
+    fi
 }
 
 setup_push_script() {
@@ -250,10 +294,8 @@ magisk_setup_settings() {
               for k in `seq 1 3` ; do
             	  adb -s $i shell "su -c '/system/bin/sh /data/local/tmp/redroid_device.sh setup_magisk_settings'"
               done
-              echo "[adb] restarting server to remove unroot..."
-              adb kill-server
-              sleep 2
-              adb start-server
+              echo "[adb] performing unroot to avoid adb_vendor_key pairing issues"
+              adb_unroot_device
           else
               echo "[magisk] Skipping $i due to connection error."
               exit 1
