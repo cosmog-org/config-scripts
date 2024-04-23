@@ -294,7 +294,7 @@ magisk_setup_settings() {
               for k in `seq 1 3` ; do
             	  adb -s $i shell "su -c '/system/bin/sh /data/local/tmp/redroid_device.sh setup_magisk_settings'"
               done
-              echo "[adb] restarting server to remove unroot..."
+              echo "[adb] performing unroot to avoid adb_vendor_key pairing issues"
               adb_unroot_device
           else
               echo "[magisk] Skipping $i due to connection error."
