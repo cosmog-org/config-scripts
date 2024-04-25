@@ -147,7 +147,7 @@ setup_cosmog_policies() {
 }
 
 setup_magisk_sulist() {
-    # add exeggcute and shell to sulist enforcement
+    # add cosmog and shell to sulist enforcement
     if [ -f "$logdir/setup_magisk_sulist" ]; then
         log '[script] setup_magisk_sulist already configured, skipping'
         return 0
