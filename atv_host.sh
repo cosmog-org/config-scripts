@@ -540,7 +540,11 @@ free_space() {
           echo "[storage] clear play and chrome, and uninstall chrome updates"
           timeout 3m adb -s $i shell "su -c 'pm clear com.google.android.gms'"
           timeout 3m adb -s $i shell "su -c 'pm clear com.android.chrome'"
+          timeout 3m adb -s $i shell "su -c 'pm clear com.android.vending'"
+          timeout 3m adb -s $i shell "su -c 'pm clear com.google.android.inputmethod.latin'"
           timeout 3m adb -s $i shell "pm uninstall com.android.chrome"
+          adb -s $i shell "su -c 'am force-stop com.nianticlabs.pokemongo'"
+          adb -s $i shell "su -c 'rm -rf /data/data/com.nianticlabs.pokemongo/cache/*'"
           adb -s $i shell "su -c 'df -h /data/'"
           echo "[storage] cleanup complete on device $i. reboot recommended."
           # Perform reboot if needed
@@ -552,6 +556,27 @@ free_space() {
           fi
       else
           echo "[storage] skipping device $i due to connection error."
+          continue
+      fi
+    done
+}
+
+integrity_cache_clear() {
+    for i in "${devices[@]}"; do
+      if connect_device "$i" "$port"; then
+          adb -s $i shell "su -c 'am force-stop com.nianticlabs.pokemongo'"
+          adb -s $i shell "su -c 'rm -rf /data/data/com.nianticlabs.pokemongo/cache/*'"
+          echo "[icache] trimming cache on device $i..."
+          timeout 3m adb -s $i shell "su -c pm trim-caches 512G"
+          echo "[cache] clearing gms, vending, chrome..."
+          timeout 3m adb -s $i shell "su -c 'pm clear com.google.android.gms'"
+          timeout 3m adb -s $i shell "su -c 'pm clear com.android.chrome'"
+          timeout 3m adb -s $i shell "su -c 'pm clear com.android.vending'"
+          timeout 3m adb -s $i shell "su -c 'pm clear com.google.android.inputmethod.latin'"
+          echo "[icache] clearing pogo cache..."
+          echo "[icache] complete"
+      else
+          echo "[icache] skipping device $i due to connection error."
           continue
       fi
     done
