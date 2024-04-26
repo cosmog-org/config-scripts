@@ -573,7 +573,6 @@ integrity_cache_clear() {
           timeout 3m adb -s $i shell "su -c 'pm clear com.google.android.gms'"
           timeout 3m adb -s $i shell "su -c 'pm clear com.android.chrome'"
           timeout 3m adb -s $i shell "su -c 'pm clear com.android.vending'"
-          timeout 3m adb -s $i shell "su -c 'pm clear com.google.android.inputmethod.latin'"
           echo "[icache] complete"
       else
           echo "[icache] skipping device $i due to connection error."
