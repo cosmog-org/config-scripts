@@ -564,6 +564,7 @@ free_space() {
 integrity_cache_clear() {
     for i in "${devices[@]}"; do
       if connect_device "$i" "$port"; then
+          echo "[icache] clearing pogo cache..."
           adb -s $i shell "su -c 'am force-stop com.nianticlabs.pokemongo'"
           adb -s $i shell "su -c 'rm -rf /data/data/com.nianticlabs.pokemongo/cache/*'"
           echo "[icache] trimming cache on device $i..."
@@ -573,7 +574,6 @@ integrity_cache_clear() {
           timeout 3m adb -s $i shell "su -c 'pm clear com.android.chrome'"
           timeout 3m adb -s $i shell "su -c 'pm clear com.android.vending'"
           timeout 3m adb -s $i shell "su -c 'pm clear com.google.android.inputmethod.latin'"
-          echo "[icache] clearing pogo cache..."
           echo "[icache] complete"
       else
           echo "[icache] skipping device $i due to connection error."
