@@ -15,13 +15,19 @@ xml_name="com.nianticproject.holoholo.libholoholo.unity.UnityMainActivity.xml"
 xml_path="/data/data/com.nianticlabs.pokemongo/shared_prefs/"
 
 # leave lib_version at 0.307.1 unless specified otherwise by cosmog dev
-lib_version=0.307.1
 cosmog_package="com.sy1vi3.cosmog"
-cosmog_apk=$(ls -t cosmog*.apk | head -n 1 | sed -e 's@\*@@g')
 cosmog_lib="libNianticLabsPlugin.so"
+lib_version=0.307.1
+lib_path="/data/data/$cosmog_package/files/$cosmog_lib"
+# expected SHA256 hash
+v_sha256="996925e1848fb49db8fbe5439cafd7dcb7aa5a57d40102015b57e067cf19f27f"
+# url of the latest apk
+d_url="https://meow.sylvie.fyi/static/cosmog.apk"
+c_file="cosmog.apk"
+cosmog_apk="$c_file"
 
 # setting this version is important for pogo_install to work if used
-pogo_version=0.307.1
+pogo_version="0.307.1"
 pogo_package="com.nianticlabs.pokemongo"
 port=5555
 
@@ -125,7 +131,6 @@ connect_device() {
 }
 
 cosmog_atv_script() {
-  # loop through devices.txt
   for i in "${devices[@]}";do
     if connect_device "$i" "$port"; then
         # push atv setup to device
@@ -195,7 +200,6 @@ EOL
 }
 
 cosmog_do_settings() {
-    # Loop through each device
     for i in "${devices[@]}";do
       if connect_device "$i" "$port"; then
           # running global commands avoid pop-ups and issues
@@ -212,8 +216,47 @@ cosmog_do_settings() {
     done
 }
 
+cosmog_download() {
+    wget -q "$d_url" -O "$c_file"
+    echo "[cosmog] download completed"
+}
+
+# function to check the sha256 hash of the apk
+cosmog_hash() {
+    local d_sha256=$(sha256sum "$c_file" | awk '{print $1}')
+    if [ "$d_sha256" = "$v_sha256" ]; then
+        echo "[cosmog] sha256 hash matched."
+        return 0
+    else
+        echo "[cosmog] sha256 hash did not match."
+        return 1
+    fi
+}
+
+# function to download and verify sha256, managing attempts
+cosmog_checkload() {
+    local attempt=1
+    local max_attempts=3
+
+    while [ $attempt -le $max_attempts ]; do
+        echo "[cosmog] attempt $attempt of $max_attempts: downloading the apk..."
+        cosmog_download
+        
+        echo "[cosmog] checking sha256 hash..."
+        if cosmog_hash; then
+            return 0
+        else
+            echo "[cosmog] sha256 check failed, reattempting download..."
+            rm -f "$c_file"  # Removing file for re-download
+            attempt=$((attempt + 1))
+        fi
+    done
+
+    echo "[cosmog] failed to download the correct file after $max_attempts attempts."
+    exit 1
+}
+
 cosmog_install() {
-    # Loop through each device
     for i in "${devices[@]}";do
       if connect_device "$i" "$port"; then
           # install cosmog
@@ -231,7 +274,6 @@ cosmog_install() {
 }
 
 cosmog_root_policy() {
-    # Loop through each device
     for i in "${devices[@]}";do
       if connect_device "$i" "$port"; then
           # setup cosmog root policy
@@ -245,7 +287,6 @@ cosmog_root_policy() {
 }
 
 cosmog_magisk_denylist() {
-    # Loop through each device
     for i in "${devices[@]}";do
       if connect_device "$i" "$port"; then
           # adding packages to denylist
@@ -265,7 +306,6 @@ cosmog_magisk_denylist() {
 }
 
 cosmog_lib() {
-    # Loop through each device
     for i in "${devices[@]}";do
       if connect_device "$i" "$port"; then
           arch=$(adb -s $i shell getprop ro.product.cpu.abi)
@@ -286,8 +326,32 @@ cosmog_lib() {
     done
 }
 
+cosmog_lib_verify() {
+    local all_exist=true
+    for i in "${devices[@]}"; do
+      if connect_device "$i" "$port"; then
+          local output=$(adb -s $i shell "test -f '$lib_path' && echo 'verified' || echo 'does not exist'" 2>&1)
+          if [[ "$output" == "verified" ]]; then
+              echo "[lib] $cosmog_lib is verified at $lib_path on device $i."
+          else
+              echo "[lib] $cosmog_lib does not exist at $lib_path on device $i, or error: $output"
+              all_exist=false
+          fi
+      else
+          echo "[lib] could not connect to device $i."
+          all_exist=false
+          continue
+      fi
+    done
+    if [[ "$all_exist" == true ]]; then
+        return 0
+    else
+        return 1
+    fi
+}
+
+
 cosmog_start() {
-    # Loop through each device
     for i in "${devices[@]}";do
       if connect_device "$i" "$port"; then
           # launch cosmog if start=true
@@ -300,9 +364,11 @@ cosmog_start() {
     done
 }
 
+# track successful xml deployments
+declare -A xml_deployment
+
 opengl_warning() {
-  # Loop through each device
-  for i in "${devices[@]}";do
+  for i in "${devices[@]}"; do
     if connect_device "$i" "$port"; then
         # Fetch OpenGL version and extract major version directly
         opengl_version=$(adb -s $i shell dumpsys SurfaceFlinger | grep -o "OpenGL ES [0-9]*\.[0-9]*" | sed -n 's/OpenGL ES \([0-9]*\)\..*/\1/p')
@@ -310,15 +376,17 @@ opengl_warning() {
         # Check if major_version was successfully extracted
         if [[ -z "$opengl_version" ]]; then
             echo "[xml] failed to extract the OpenGL version."
-            return 1
+            xml_deployment[$i]="error"
+            continue
         fi
 
         # Compare the major version number
         if [[ $opengl_version -ge 3 ]]; then
             echo "[xml] opengl is 3+, skipping"
+            xml_deployment[$i]="skipped"
         else
             echo "[xml] OpenGL version is less than 3. Pushing XML file to device."
-            # Push XML file to the device
+            xml_deployment[$i]="deployed"
             adb -s $i push "$xml_file" /data/local/tmp
             adb -s $i shell "su -c 'chown root:root /data/local/tmp/$xml_file'"
             adb -s $i shell "su -c 'mkdir -p $xml_path'"
@@ -326,13 +394,44 @@ opengl_warning() {
         fi
     else
         echo "[xml] Skipping $i due to connection error."
-        continue
+        xml_deployment[$i]="error"
+    fi
+  done
+}
+
+opengl_verify() {
+    local all_verified=true 
+    for i in "${devices[@]}"; do
+      if [[ ${xml_deployment[$i]} == "deployed" ]]; then
+        if ! connect_device "$i" "$port"; then
+            echo "[xml] could not connect to device $i."
+            all_verified=false
+            continue
+        fi
+
+        local file_path="$xml_path$xml_name"
+        local output=$(adb -s $i shell "test -f '$file_path' && echo 'verified' || echo 'does not exist'" 2>&1)
+        if [[ "$output" == "verified" ]]; then
+            echo "[xml] $xml_name is verified at $file_path on device $i."
+        else
+            echo "[xml] $xml_name does not exist at $file_path on device $i, or error: $output"
+            all_verified=false
+        fi
+      elif [[ ${xml_deployment[$i]} == "skipped" ]]; then
+        echo "[xml] $xml_name was not required and thus not deployed on device $i."
+      else
+        echo "[xml] no deployment action was taken for device $i."
       fi
     done
+
+    if [[ $all_verified == true ]]; then
+        return 0
+    else
+        return 1
+    fi
 }
 
 pogo_install () {
-    # Loop through each device
     for i in "${devices[@]}"; do
         if connect_device "$i" "$port"; then
             echo "[pogo] checking for installed package on device $i"
@@ -373,7 +472,7 @@ pogo_install () {
             # Install the selected APK
             if [[ -n "$apk_to_install" ]]; then
                 echo "[pogo] Installing $apk_to_install on $i"
-                timeout 10m adb -s $i install -r "$apk_to_install"
+                timeout 3m adb -s $i install -r "$apk_to_install"
             else
                 echo "[pogo] No compatible apk found for $i"
             fi
@@ -384,13 +483,50 @@ pogo_install () {
     done
 }
 
+pogo_verify() {
+    local all_verified=true
+
+    for i in "${devices[@]}"; do
+        if connect_device "$i" "$port"; then
+            echo "[pogo] verifying installation on device $i"
+
+            # Check if the package exists
+            if adb -s $i shell "pm list packages | grep -q \"$pogo_package\""; then
+                # Package exists, checking version
+                installed_version=$(adb -s $i shell dumpsys package $pogo_package | grep versionName | cut -d "=" -f 2 | tr -d '\r')
+                echo "[pogo] found installed version '$installed_version' on device $i"
+
+                # Verify if the installed version matches the expected version
+                if [[ "$installed_version" == "$pogo_version" ]]; then
+                    echo "[pogo] version on device $i is correct."
+                else
+                    echo "[pogo] version mismatch on device $i: expected '$pogo_version', found '$installed_version'"
+                    all_verified=false
+                fi
+            else
+                echo "[pogo] package '$pogo_package' is not installed on device $i."
+                all_verified=false
+            fi
+        else
+            echo "[pogo] could not connect to device $i."
+            all_verified=false
+        fi
+    done
+
+    if [[ $all_verified == true ]]; then
+        echo "[pogo] all devices have been verified successfully."
+        return 0
+    else
+        echo "[pogo] verification failed for one or more devices."
+        return 1
+    fi
+}
 
 free_space() {
-    # Loop through each device
     for i in "${devices[@]}"; do
       if connect_device "$i" "$port"; then
           echo "[storage] trimming cache on device $i..."
-          timeout 10m adb -s $i shell "su -c pm trim-caches 512G"
+          timeout 3m adb -s $i shell "su -c pm trim-caches 512G"
           echo "[storage] deleting install fails temporary files..."
           adb -s $i shell "su -c rm -rf /data/app/vmdl*.tmp"
 
@@ -402,16 +538,16 @@ free_space() {
           done
 
           echo "[storage] clear play and chrome, and uninstall chrome updates"
-          timeout 10m adb -s $i shell "su -c 'pm clear com.google.android.gms'"
-          timeout 10m adb -s $i shell "su -c 'pm clear com.android.chrome'"
-          timeout 10m adb -s $i shell "pm uninstall com.android.chrome"
+          timeout 3m adb -s $i shell "su -c 'pm clear com.google.android.gms'"
+          timeout 3m adb -s $i shell "su -c 'pm clear com.android.chrome'"
+          timeout 3m adb -s $i shell "pm uninstall com.android.chrome"
           adb -s $i shell "su -c 'df -h /data/'"
           echo "[storage] cleanup complete on device $i. reboot recommended."
           # Perform reboot if needed
           if [[ "$reboot_cleanup" == "true" ]]; then
-              echo "[reboot] Rebooting device $i..."
+              echo "[reboot] rebooting device $i..."
               adb -s $i reboot
-              echo "[reboot] sleepign for 180s..."
+              echo "[reboot] sleeping for 180s..."
               sleep 180  # Wait for the device to reboot
           fi
       else
@@ -423,26 +559,33 @@ free_space() {
 
 cosmog_update() {
     cosmog_atv_script || { log "[error] transferring device setup script"; exit 1; }
+    cosmog_checkload || { log "[error] downloading apk and verifying hash"; exit 1; }
     cosmog_install || { log "[error] installing cosmog"; exit 1; }
     cosmog_root_policy || { log "[error] inserting cosmog root policy"; exit 1; }
     cosmog_magisk_denylist || { log "[error] setting up denylist"; exit 1; }
     joltik || { log "[error] fetching lib with joltik"; exit 1; }
     cosmog_lib || { log "[error] installing lib"; exit 1; }
-    opengl_warning || { log "[error] installing pogo"; exit 1; }
+    cosmog_lib_verify || { log "[error] verifying lib install status"; exit 1; }
+    opengl_warning || { log "[error] checking opengl status"; exit 1; }
+    opengl_verify || { log "[error] verifying xml status"; exit 1; }
     cosmog_start || { log "[error] starting cosmog"; exit 1; }
 }
 
 pogo_clean_install() {
     free_space || { log "[error] cleaning space"; exit 1; }
     pogo_install || { log "[error] installing pogo"; exit 1; }
-    opengl_warning || { log "[error] installing pogo"; exit 1; }
+    pogo_verify || { log "[error] verifying pogo install status"; exit 1; }
+    opengl_warning || { log "[error] checking opengl status"; exit 1; }
+    opengl_verify || { log "[error] verifying xml status"; exit 1; }
     cosmog_atv_script || { log "[error] transferring device setup script"; exit 1; }
     cosmog_do_settings || { log "[error] performing global config on device"; exit 1; }
+    cosmog_checkload || { log "[error] downloading apk and verifying hash"; exit 1; }
     cosmog_install || { log "[error] installing cosmog"; exit 1; }
     cosmog_root_policy || { log "[error] inserting cosmog root policy"; exit 1; }
     cosmog_magisk_denylist || { log "[error] setting up denylist"; exit 1; }
     joltik || { log "[error] fetching lib with joltik"; exit 1; }
     cosmog_lib || { log "[error] installing lib"; exit 1; }
+    cosmog_lib_verify || { log "[error] verifying lib install status"; exit 1; }
     cosmog_start || { log "[error] starting cosmog"; exit 1; }
 }
 
@@ -454,13 +597,17 @@ if [ $# -eq 0 ]; then
         cosmog_atv_script || { log "[error] transferring device setup script"; exit 1; }
         cosmog_config || { log "[error] generating and transferring cosmog config json"; exit 1; }
         cosmog_do_settings || { log "[error] performing global config on device"; exit 1; }
+        cosmog_checkload || { log "[error] downloading apk and verifying hash"; exit 1; }
         cosmog_install || { log "[error] installing cosmog"; exit 1; }
         cosmog_root_policy || { log "[error] inserting cosmog root policy"; exit 1; }
         cosmog_magisk_denylist || { log "[error] setting up denylist"; exit 1; }
         joltik || { log "[error] fetching lib with joltik"; exit 1; }
         cosmog_lib || { log "[error] installing lib"; exit 1; }
+        cosmog_lib_verify || { log "[error] verifying lib install status"; exit 1; }
         pogo_install || { log "[error] installing pogo"; exit 1; }
-        opengl_warning || { log "[error] installing opengl warning bypass"; exit 1; }
+        pogo_verify || { log "[error] verifying pogo install status"; exit 1; }
+        opengl_warning || { log "[error] checking opengl status"; exit 1; }
+        opengl_verify || { log "[error] verifying xml status"; exit 1; }
         cosmog_start || { log "[error] starting cosmog"; exit 1; }
     }
 
