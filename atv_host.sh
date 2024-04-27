@@ -346,10 +346,13 @@ cosmog_lib() {
 
 cosmog_lib_verify() {
     local all_exist=true
+    local dir_path="/data/data/$cosmog_package/files"
+
     for i in "${devices[@]}"; do
       if connect_device "$i" "$port"; then
-          local output=$(adb -s $i shell "test -f '$lib_path' && echo 'verified' || echo 'does not exist'" 2>&1)
-          if [[ "$output" == "verified" ]]; then
+          # using ls to list files in the directory
+          local output=$(adb -s $i shell "su -c 'ls \"$dir_path\"'" 2>&1)
+          if echo "$output" | grep -q "$cosmog_lib"; then
               echo "[lib] $cosmog_lib is verified at $lib_path on device $i."
           else
               echo "[lib] $cosmog_lib does not exist at $lib_path on device $i, or error: $output"
@@ -361,6 +364,7 @@ cosmog_lib_verify() {
           continue
       fi
     done
+
     if [[ "$all_exist" == true ]]; then
         return 0
     else
