@@ -44,9 +44,9 @@ rotom_addy="ROTOM_IP:PORT"
 rotom_secret="ROTOM_SECRET"
 
 # config json creation and settings
-# default set to 8 for most ATVs for scanning
+# default set to 5 for most ATVs for scanning
 # set this value to 0 if you want to generate Solver only ATVs
-workers=2
+workers=5
 # you can change the line value starting from 1 to something else
 # for example: default increments from Cosmog001 to start
 # or 500 starts incrementing from Cosmog500 for config json
@@ -62,8 +62,9 @@ reboot_cleanup=false
 # reboots atv after denylist is added
 # denylist will not take effect unless android is rebooted
 # default to false due to different android devices
-# reboot sleep is set to 180s (3mins)
-reboot_denylist=false
+# reboot sleep is set to 120s (2mins)
+reboot_denylist=true
+reboot_timeout=120
 
 
 # Ensure devices.txt exists
@@ -314,8 +315,8 @@ cosmog_magisk_denylist() {
           if [[ "$reboot_denylist" == "true" ]]; then
               echo "[reboot] Rebooting device $i..."
               adb -s $i reboot
-              echo "[reboot] rebooting, sleeping for 180s..."
-              sleep 180  # Wait for the device to reboot
+              echo "[reboot] rebooting, sleeping for $reboot_timeout..."
+              sleep $reboot_timeout  # Wait for the device to reboot
           fi
       else
           echo "[magisk] Skipping $i due to connection error."
@@ -574,8 +575,8 @@ free_space() {
           if [[ "$reboot_cleanup" == "true" ]]; then
               echo "[reboot] rebooting device $i..."
               adb -s $i reboot
-              echo "[reboot] sleeping for 180s..."
-              sleep 180  # Wait for the device to reboot
+              echo "[reboot] sleeping for $reboot_timeout..."
+              sleep $reboot_timeout  # Wait for the device to reboot
           fi
       else
           echo "[storage] skipping device $i due to connection error."
