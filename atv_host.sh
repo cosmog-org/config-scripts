@@ -111,22 +111,40 @@ joltik(){
 connect_device() {
     local device_ip="$1"
     local device_port="$2"
-    local timeout_duration="180s"  # Timeout after 3mins
+    local timeout_duration="60s"
+    local max_retries=3
+    local attempt=0
+    local success=0
+    local sleep_time=10
 
+    adb disconnect "${device_ip}:${device_port}"
+    sleep 2
     echo "[adb] trying to connect to ${device_ip}:${device_port}..."
-    local output=$(timeout $timeout_duration adb connect "${device_ip}:${device_port}" 2>&1)
 
-    if [[ "$output" == *"connected"* ]]; then
-        echo "[adb] connected successfully to ${device_ip}."
-        return 0  # Success
-    elif [[ $? -eq 124 ]]; then  # Check if timeout occurred
-        echo "[adb] connection attempt to ${device_ip} timed out."
-        echo "${device_ip} timeout" >> "$logfile"
-        return 1  # Failure due to timeout
-    else
-        echo "[error] connecting to ${device_ip}: $output"
-        echo "${device_ip} error" >> "$logfile"
-        return 1  # Failure
+    while (( attempt < max_retries && success == 0 )); do
+        local output=$(timeout $timeout_duration adb connect "${device_ip}:${device_port}" 2>&1)
+        local exit_status=$?
+
+        if [[ "$output" == *"connected"* || "$output" == *"already connected to"* ]]; then
+            echo "[adb] connected successfully to ${device_ip}:${device_port}."
+            success=1
+        elif [[ -z "$output" || "$output" == *"offline"* || "$output" == *"connection refused"* ]]; then
+            echo "[adb] warning: $output. retrying connection attempt ${attempt}..."
+        elif [[ "$exit_status" -eq 124 ]]; then  #
+            echo "[adb] connection attempt to ${device_ip}:${device_port} timed out."
+            echo "${device_ip}:${device_port} Timeout" >> "$logfile"
+        else
+            echo "[adb] error connecting to ${device_ip}:${device_port}: $output"
+            echo "${device_ip}:${device_port} Error" >> "$logfile"
+        fi
+        
+        ((attempt++))
+        sleep $sleep_time
+    done
+
+    if [[ success -eq 0 ]]; then
+        echo "[adb] max retries reached, unable to connect to ${device_ip}:${device_port}."
+        exit 1
     fi
 }
 
