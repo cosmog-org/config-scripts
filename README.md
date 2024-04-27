@@ -26,6 +26,7 @@
     - This script must be run on a host on the same network as your android device(s)
     - Requirements in the directory:
         - cosmog*.apk
+        - pogo*.apk (32bit or 64bit whichever applies to you)
         - atv_device.sh
         - warning.xml (disables opengl warning on opengl devices < 3)
         - devices.txt
