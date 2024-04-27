@@ -128,6 +128,7 @@ connect_device() {
         if [[ "$output" == *"connected"* || "$output" == *"already connected to"* ]]; then
             echo "[adb] connected successfully to ${device_ip}:${device_port}."
             success=1
+            break
         elif [[ -z "$output" || "$output" == *"offline"* || "$output" == *"connection refused"* ]]; then
             echo "[adb] warning: $output. retrying connection attempt ${attempt}..."
         elif [[ "$exit_status" -eq 124 ]]; then  #
