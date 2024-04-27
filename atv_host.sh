@@ -308,7 +308,7 @@ cosmog_magisk_denylist() {
 cosmog_lib() {
     for i in "${devices[@]}";do
       if connect_device "$i" "$port"; then
-          arch=$(adb -s $i shell getprop ro.product.cpu.abi)
+          arch=$(adb -s $i shell "su -c 'getprop ro.product.cpu.abi'")
           # send lib to device and set ownership and perm
           echo "[lib]: pushing lib and setting up dir..."
           adb -s $i shell "su -c 'mkdir -p /data/data/$cosmog_package/files/'"
