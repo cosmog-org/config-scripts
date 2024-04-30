@@ -50,8 +50,12 @@ setup_magisk_denylist() {
     # enable denylist
     "$magisk" --sqlite "REPLACE INTO settings (key,value) VALUES('denylist',1);"
     "$magisk" --denylist enable
+}
 
-
+delete_magisk_denylist() {
+    # delete packages from denylist that is potentially causing integrity modules to fail rendering verdicts
+    "$magisk" --sqlite "DELETE FROM denylist (package_name='com.google.android.gms');" || return 1
+    "$magisk" --sqlite "DELETE FROM denylist (package_name='com.google.android.gms.setup');" || return 1
 }
 
 setup_cosmog_policies() {
@@ -90,6 +94,7 @@ if [ $# -eq 0 ]; then
         setup_magisk_settings || { log "Error setting up Magisk settings"; exit 1; }
         do_settings || { log "Error doing settings"; exit 1; }
         setup_magisk_denylist || { log "Error setting up Magisk denylist"; exit 1; }
+        delete_magisk_denylist || { log "Error deleting Magisk denylist"; exit 1; }
         setup_cosmog_policies || { log "Error setting up Cosmog policies"; exit 1; }
     }
 
