@@ -36,9 +36,8 @@ do_settings() {
 setup_magisk_denylist() {
     # add common packages to denylist
     "$magisk" --sqlite "REPLACE INTO denylist (package_name,process) VALUES('com.android.vending','com.android.vending');" || return 1
-    "$magisk" --sqlite "REPLACE INTO denylist (package_name,process) VALUES('com.google.android.gms','com.google.android.gms');" || return 1
-    "$magisk" --sqlite "REPLACE INTO denylist (package_name,process) VALUES('com.google.android.gms.setup','com.google.android.gms.setup');" || return 1
-    "$magisk" --sqlite "REPLACE INTO denylist (package_name,process) VALUES('com.google.android.gsf','com.google.android.gsf');" || return 1
+    # "$magisk" --sqlite "REPLACE INTO denylist (package_name,process) VALUES('com.google.android.gms','com.google.android.gms');" || return 1
+    # "$magisk" --sqlite "REPLACE INTO denylist (package_name,process) VALUES('com.google.android.gms.setup','com.google.android.gms.setup');" || return 1
     "$magisk" --sqlite "REPLACE INTO denylist (package_name,process) VALUES('com.nianticlabs.pokemongo','com.nianticlabs.pokemongo');" || return 1
     # add cosmog workers to denylist
     i=1
