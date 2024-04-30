@@ -310,7 +310,11 @@ cosmog_magisk_denylist() {
     for i in "${devices[@]}";do
       if connect_device "$i" "$port"; then
           # adding packages to denylist
+          echo "[magisk] adding packages to denylist"
           adb -s $i shell "su -c '/system/bin/sh /data/local/tmp/atv_device.sh setup_magisk_denylist'"
+          echo "[magisk] deleting gms from denylist"
+          # this is crucial for integrity modules to render useful verdicts
+          adb -s $i shell "su -c '/system/bin/sh /data/local/tmp/atv_device.sh delete_magisk_denylist'"
           echo "[magisk] denylist complete"
           if [[ "$reboot_denylist" == "true" ]]; then
               echo "[reboot] Rebooting device $i..."
