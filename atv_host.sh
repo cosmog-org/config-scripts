@@ -176,7 +176,7 @@ cosmog_config() {
 
     if [[ "$workers" -eq 0 ]]; then
         config_dir="configs/solvers"  # Directory for solvers
-        use_local_safetynet="false"
+        use_local_safetynet="true"
         disable_attest_delay="true"
     fi
 
