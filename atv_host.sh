@@ -17,17 +17,17 @@ xml_path="/data/data/com.nianticlabs.pokemongo/shared_prefs/"
 # leave lib_version at 0.307.1 unless specified otherwise by cosmog dev
 cosmog_package="com.sy1vi3.cosmog"
 cosmog_lib="libNianticLabsPlugin.so"
-lib_version=0.307.1
+lib_version=0.311.1
 lib_path="/data/data/$cosmog_package/files/$cosmog_lib"
 # expected SHA256 hash
-v_sha256="996925e1848fb49db8fbe5439cafd7dcb7aa5a57d40102015b57e067cf19f27f"
+v_sha256="c8b301d821c53e094ddd16f67a270254078f31e2c866ad8c1e8c6c9836a5f233"
 # url of the latest apk
 d_url="https://meow.sylvie.fyi/static/cosmog.apk"
 c_file="cosmog.apk"
 cosmog_apk="$c_file"
 
 # setting this version is important for pogo_install to work if used
-pogo_version="0.307.1"
+pogo_version="0.311.1"
 pogo_package="com.nianticlabs.pokemongo"
 port=5555
 
