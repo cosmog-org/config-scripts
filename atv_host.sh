@@ -438,7 +438,7 @@ opengl_verify() {
         fi
 
         local file_path="$xml_path$xml_name"
-        local output=$(adb -s $i shell "test -f '$file_path' && echo 'verified' || echo 'does not exist'" 2>&1)
+        local output=$(adb -s $i shell "su -c 'test -f \"$file_path\" && echo \"verified\" || echo \"does not exist\"'")
         if [[ "$output" == "verified" ]]; then
             echo "[xml] $xml_name is verified at $file_path on device $i."
         else
