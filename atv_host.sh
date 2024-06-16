@@ -20,7 +20,7 @@ cosmog_lib="libNianticLabsPlugin.so"
 lib_version=0.311.1
 lib_path="/data/data/$cosmog_package/files/$cosmog_lib"
 # expected SHA256 hash
-v_sha256="fde1ea592eff83622c9cf7cbad884585280212e9ef1ae1c6d8f60ba584932ea7"
+v_sha256="031c60407621545bc3db56ccbcf161ae2ed74a7bf0c98c136c55ec9ee341d347"
 # url of the latest apk
 d_url="https://meow.sylvie.fyi/static/cosmog.apk"
 c_file="cosmog.apk"
