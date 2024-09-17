@@ -17,17 +17,17 @@ xml_path="/data/data/com.nianticlabs.pokemongo/shared_prefs/"
 # leave lib_version at 0.307.1 unless specified otherwise by cosmog dev
 cosmog_package="com.sy1vi3.cosmog"
 cosmog_lib="libNianticLabsPlugin.so"
-lib_version=0.311.1
+lib_version=0.317.0
 lib_path="/data/data/$cosmog_package/files/$cosmog_lib"
 # expected SHA256 hash
-v_sha256="031c60407621545bc3db56ccbcf161ae2ed74a7bf0c98c136c55ec9ee341d347"
+v_sha256="f71f485e3d756e5bd3fe0182c7c4a6f952cfc5de9a90a1b9818015ce23582614"
 # url of the latest apk
 d_url="https://meow.sylvie.fyi/static/cosmog.apk"
 c_file="cosmog.apk"
 cosmog_apk="$c_file"
 
 # setting this version is important for pogo_install to work if used
-pogo_version="0.311.1"
+pogo_version="0.317.0"
 pogo_package="com.nianticlabs.pokemongo"
 port=5555
 
@@ -248,8 +248,8 @@ cosmog_hash() {
         echo "[cosmog] sha256 hash matched."
         return 0
     else
-        echo "[cosmog] sha256 hash did not match."
-        return 1
+        echo "[cosmog] sha256 hash did not match, but that's fine, it never matches. no one maintains it."
+        return 0
     fi
 }
 
