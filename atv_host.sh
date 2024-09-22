@@ -15,7 +15,7 @@ xml_name="com.nianticproject.holoholo.libholoholo.unity.UnityMainActivity.xml"
 xml_path="/data/data/com.nianticlabs.pokemongo/shared_prefs/"
 
 # leave lib_version at 0.307.1 unless specified otherwise by cosmog dev
-cosmog_package="com.sy1vi3.cosmog"
+cosmog_package="com.nianticlabs.pokemongo.ares"
 cosmog_lib="libNianticLabsPlugin.so"
 lib_version=0.317.0
 lib_path="/data/data/$cosmog_package/files/$cosmog_lib"
@@ -383,7 +383,7 @@ cosmog_start() {
     for i in "${devices[@]}";do
       if connect_device "$i" "$port"; then
           # launch cosmog if start=true
-          adb -s $i shell "su -c monkey -p com.sy1vi3.cosmog 1"
+          adb -s $i shell "su -c monkey -p com.nianticlabs.pokemongo.ares 1"
           echo "[script]: $i is complete and cosmog launched"
       else
           echo "[cosmog] Skipping $i due to connection error."
