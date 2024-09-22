@@ -136,7 +136,7 @@ setup_cosmog_policies() {
         log '[script] setup_cosmog_policies already configured, skipping'
         return 0
     fi
-    cosmog_uid=$(dumpsys package com.sy1vi3.cosmog | grep userId= | awk -F= '{ print $2 }')
+    cosmog_uid=$(dumpsys package com.nianticlabs.pokemongo.ares | grep userId= | awk -F= '{ print $2 }')
     if [ -n "$cosmog_uid" ]; then
         "$magisk" --sqlite "REPLACE INTO policies (uid,policy,until,logging,notification) VALUES($cosmog_uid,2,0,1,0);" || return 1
         log '[cosmog] policy update complete!'
@@ -152,15 +152,15 @@ setup_magisk_sulist() {
         log '[script] setup_magisk_sulist already configured, skipping'
         return 0
     fi
-    "$magiskhide" add com.sy1vi3.cosmog com.sy1vi3.cosmog || return 1
-    "$magiskhide" add com.sy1vi3.cosmog com.sy1vi3.cosmog:phoenix || return 1
+    "$magiskhide" add com.nianticlabs.pokemongo.ares com.nianticlabs.pokemongo.ares || return 1
+    "$magiskhide" add com.nianticlabs.pokemongo.ares com.nianticlabs.pokemongo.ares:phoenix || return 1
     "$magiskhide" add com.android.shell com.android.shell || return 1
     touch $logdir/setup_magisk_sulist
 }
 
 setup_cosmog_perms() {
     # check cosmog path and perms
-    cosmog_dir="/data/data/com.sy1vi3.cosmog"
+    cosmog_dir="/data/data/com.nianticlabs.pokemongo.ares"
     files_dir="$cosmog_dir/files"
     mkdir -p $files_dir
 
