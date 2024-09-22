@@ -8,7 +8,7 @@
 
 # leave this as is unless directed to change
 cosmog_lib="libNianticLabsPlugin.so"
-cosmog_package="com.sy1vi3.cosmog"
+cosmog_package="com.nianticlabs.pokemongo.ares"
 cosmog_apk=$(ls -t cosmog*.apk | head -n 1 | sed -e 's@\*@@g')
 # leave this as is unless cosmog dev mandates a different version
 lib_version=0.317.0
@@ -465,14 +465,14 @@ check_cosmog_sulist() {
                 exit 1
             fi
 
-            # Check for com.sy1vi3.cosmog
+            # Check for com.nianticlabs.pokemongo.ares
             output=$(adb -s "$i" shell "su -c '/system/bin/magiskhide ls'" 2>&1)
             # Clean up the output for whitespace and newlines
             output=$(echo "$output" | tr -d '\n' | tr -s ' ')
-            if [[ "$output" == *"com.sy1vi3.cosmog|com.sy1vi3.cosmog"* ]]; then
-                echo "[magisk] com.sy1vi3.cosmog is confirmed on device $i."
+            if [[ "$output" == *"com.nianticlabs.pokemongo.ares|com.nianticlabs.pokemongo.ares"* ]]; then
+                echo "[magisk] com.nianticlabs.pokemongo.ares is confirmed on device $i."
             else
-                echo "[error] com.sy1vi3.cosmog failed to be added to sulist on device $i."
+                echo "[error] com.nianticlabs.pokemongo.ares failed to be added to sulist on device $i."
                 exit 1
             fi
 
