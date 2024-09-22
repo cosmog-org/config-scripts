@@ -129,7 +129,7 @@ sudo docker-compose -f ~/cosmog/docker-compose.yml up -d" >> houndour/startup.sh
 
 adb connect localhost:${port}
 adb -s localhost:${port} push ./configs/${i}.json /data/local/tmp/cosmog.json
-adb -s localhost:${port} shell am start -n com.sy1vi3.cosmog/com.sy1vi3.cosmog.MainActivity
+adb -s localhost:${port} shell am start -n com.nianticlabs.pokemongo.ares/com.nianticlabs.pokemongo.ares.MainActivity
 
 sleep 10
 " >> send_configs.sh
