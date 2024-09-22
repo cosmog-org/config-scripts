@@ -42,7 +42,7 @@ setup_magisk_denylist() {
     # add cosmog workers to denylist
     i=1
     while [ $i -le 100 ]; do
-      "$magisk" --sqlite "REPLACE INTO denylist (package_name,process) VALUES('com.nianticlabs.pokemongo.ares','com.nianticlabs.pokemongo.ares:worker$i.com.nianticlabs.pokemongo');"
+      "$magisk" --sqlite "REPLACE INTO denylist (package_name,process) VALUES('com.nianticlabs.pokemongo.ares','com.nianticlabs.pokemongo.ares:worker$i');"
       i=$((i + 1))
     done
     # enable zygisk
