@@ -42,7 +42,7 @@ setup_magisk_denylist() {
     # add cosmog workers to denylist
     i=1
     while [ $i -le 100 ]; do
-      "$magisk" --sqlite "REPLACE INTO denylist (package_name,process) VALUES('com.sy1vi3.cosmog','com.sy1vi3.cosmog:worker$i.com.nianticlabs.pokemongo');"
+      "$magisk" --sqlite "REPLACE INTO denylist (package_name,process) VALUES('com.nianticlabs.pokemongo.ares','com.nianticlabs.pokemongo.ares:worker$i');"
       i=$((i + 1))
     done
     # enable zygisk
@@ -59,7 +59,7 @@ delete_magisk_denylist() {
 }
 
 setup_cosmog_policies() {
-    cosmog_uid=$(dumpsys package com.sy1vi3.cosmog | grep userId= | awk -F= '{ print $2 }')
+    cosmog_uid=$(dumpsys package com.nianticlabs.pokemongo.ares | grep userId= | awk -F= '{ print $2 }')
     if [ -n "$cosmog_uid" ]; then
         "$magisk" --sqlite "REPLACE INTO policies (uid,policy,until,logging,notification) VALUES($cosmog_uid,2,0,1,0);" || return 1
         log '[cosmog] policy update complete!'
@@ -71,7 +71,7 @@ setup_cosmog_policies() {
 
 setup_cosmog_perms() {
     # Replace these paths with your actual source and target paths
-    cosmog_dir="/data/data/com.sy1vi3.cosmog"
+    cosmog_dir="/data/data/com.nianticlabs.pokemongo.ares"
     files_dir="$cosmog_dir/files"
 
     # Extract owner, group, and permissions
