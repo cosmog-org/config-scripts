@@ -5,7 +5,7 @@
     - This script is written to take your new server from nothing to running Cosmog.
     - This will pull in both redroid_host.sh and redroid_setup.sh.
     - Config files for redroid_host.sh, Cosmog and Houndour will be auto generated based on answers to questions.
-    - **SCRIPT HAS ONLY BEEN TESTED ON UBUNTU SYSTEMS. YMMV**
+    - **SCRIPT HAS ONLY BEEN TESTED ON UBUNTU 22.04 SYSTEMS. YMMV**
 
 
 2. **redroid_host.sh**
