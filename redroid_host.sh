@@ -11,7 +11,7 @@ cosmog_lib="libNianticLabsPlugin.so"
 cosmog_package="com.nianticlabs.pokemongo.ares"
 cosmog_apk=$(ls -t cosmog*.apk | head -n 1 | sed -e 's@\*@@g')
 # leave this as is unless cosmog dev mandates a different version
-lib_version=0.317.0
+lib_version=0.337.0
 cosmog_startup=false
 # Ensure the cosmog directory exists
 mkdir -p ~/cosmog
